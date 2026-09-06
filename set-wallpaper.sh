@@ -494,6 +494,33 @@ cat > "$CONFIG_DIR/xfce4-panel.xml" << 'PANELXML'
 </channel>
 PANELXML
 
+# ---- GTK3 CSS Override (macOS Translucent Top Bar & No White Box) ---
+mkdir -p /config/.config/gtk-3.0
+cat > /config/.config/gtk-3.0/gtk.css << 'CSSEOF'
+/* macOS Sonoma Top Bar Translucent Styling */
+.xfce4-panel,
+panel-window {
+    background-color: rgba(15, 23, 42, 0.85) !important;
+    color: #f8fafc !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Remove white background box from top-left button & all panel buttons */
+.xfce4-panel button,
+.xfce4-panel button:hover,
+.xfce4-panel button:checked,
+.xfce4-panel button:active,
+#applicationsmenu-button,
+#whiskermenu-button,
+.xfce4-panel .flat {
+    background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: #f8fafc !important;
+}
+CSSEOF
+
 # ---- PERMANENT XFCE DESKTOP XML CONFIG -----------------------------
 chattr -i "$CONFIG_DIR/xfce4-desktop.xml" 2>/dev/null || true
 cat > "$CONFIG_DIR/xfce4-desktop.xml" << XMLEOF
