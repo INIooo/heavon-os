@@ -11,6 +11,7 @@ HeavenOS Features:
 - Dock: Animated Plank Dock at the bottom
 - Audio: PulseAudio WebRTC sound streaming enabled for browser
 - Branding: Custom browser tab title & favicon (☁️ Cloud Icon + Custom Title)
+- WebSocket Fix: KasmVNC origin check bypassed for 100% stable remote connections
 - Wallpaper: Permanent Lotus Wallpaper (Default system wallpapers purged)
 - Apps: Google Chrome, Discord, VS Code, Blender, GIMP, Audacity, VLC, FileZilla
 - Bidirectional File Portal: Drag & Drop Upload AND Direct File Download (Port 8889)
@@ -62,7 +63,7 @@ STEP 4: PUBLIC WEB LINK GENERATE KARO (STANDALONE CLOUDFLARE TUNNEL)
 Agar default instance (Port 8888) ke liye public web link chahiye,
 terminal me ye command run karo:
 
-curl -L --output cloudflared https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 && chmod +x cloudflared && ./cloudflared tunnel --url http://localhost:8888
+curl -L --output cloudflared https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 && chmod +x cloudflared && ./cloudflared tunnel --url http://127.0.0.1:8888
 
 Output me ek public link dikhegi:
   https://xxxx-xxxx.trycloudflare.com

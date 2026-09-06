@@ -24,18 +24,39 @@ cp -f /lotus-wallpaper.png /defaults/bg.png 2>/dev/null || true
 # ---- Clear old cached desktop settings ---------------------------
 rm -rf /config/.cache/xfce4/desktop 2>/dev/null || true
 
-# ---- Custom Web Title & Favicon Branding Overrides -----------------
-TITLE_TEXT="${TITLE:-HeavenOS Cloud Workstation ☁️}"
+# ---- KasmVNC WebSocket Origin Checks Override (Fixes WebSocket Disconnect) ---
+mkdir -p /etc/kasmvnc /defaults /config/.kasm
 
-python3 -c "
+cat > /etc/kasmvnc/kasmvnc.yaml << 'KASMYAML'
+network:
+  protocol: http
+  ssl:
+    require_ssl: false
+  websocket:
+    check_origin: false
+    valid_origins:
+      - "*"
+KASMYAML
+
+cp -f /etc/kasmvnc/kasmvnc.yaml /defaults/kasmvnc.yaml 2>/dev/null || true
+cp -f /etc/kasmvnc/kasmvnc.yaml /config/.kasm/kasmvnc.yaml 2>/dev/null || true
+
+find /etc/kasmvnc /defaults /config -name "*.yaml" -o -name "*.yml" 2>/dev/null | while read -r yfile; do
+    if [ -f "$yfile" ]; then
+        sed -i 's/check_origin: true/check_origin: false/g' "$yfile" 2>/dev/null || true
+    fi
+done
+
+# ---- Custom Web Title & Favicon Branding Overrides -----------------
+cat > /usr/local/bin/heaven-branding.py << 'PYEOF'
 import glob, os, re
 
-title = '''${TITLE_TEXT}'''
-favicon_tag = '''<link rel=\"icon\" type=\"image/svg+xml\" href=\"/favicon.svg\"><link rel=\"shortcut icon\" href=\"/favicon.svg\">'''
+title = os.getenv('TITLE', 'HeavenOS Cloud Workstation ☁️')
+favicon_tag = '<link rel="icon" type="image/svg+xml" href="/favicon.svg"><link rel="shortcut icon" href="/favicon.svg">'
 
-svg_content = '''<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\">
-  <rect width=\"100\" height=\"100\" rx=\"25\" fill=\"#0f172a\"/>
-  <text x=\"50\" y=\"68\" font-size=\"60\" text-anchor=\"middle\">☁️</text>
+svg_content = '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <rect width="100" height="100" rx="25" fill="#0f172a"/>
+  <text x="50" y="68" font-size="60" text-anchor="middle">☁️</text>
 </svg>'''
 
 for d in ['/usr/share/kasmvnc/www', '/defaults']:
@@ -61,9 +82,10 @@ for root_dir in ['/usr/share/kasmvnc/www', '/defaults']:
                 content = content.replace('</head>', f'{favicon_tag}</head>')
             with open(filepath, 'w', encoding='utf-8') as f:
                 f.write(content)
-        except Exception as e:
+        except Exception:
             pass
-" 2>/dev/null || true
+PYEOF
+python3 /usr/local/bin/heaven-branding.py 2>/dev/null || true
 
 # ---- PulseAudio Auto-start for Audio Streaming --------------------
 if ! pgrep -x "pulseaudio" > /dev/null; then
