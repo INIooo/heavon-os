@@ -1,13 +1,13 @@
 # ====================================================================
 #  HeavenOS - Based on Arch Linux XFCE (LinuxServer Webtop)
-#  Lotus wallpaper ONLY - Baaki sab DELETE
+#  Lotus wallpaper ONLY - Baaki sab DELETE (folder structure intact)
 # ====================================================================
 
 FROM lscr.io/linuxserver/webtop:arch-xfce
 
 LABEL maintainer="HeavenOS"
 LABEL description="HeavenOS - Arch Linux XFCE (Lotus Only)"
-LABEL version="1.3"
+LABEL version="1.4"
 
 ENV PUID=1000
 ENV PGID=1000
@@ -19,15 +19,13 @@ EXPOSE 3000
 # ---- Lotus wallpaper copy karo -----------------------------------
 COPY Lotus-Wallpaper-Upscaled16x.png /lotus-wallpaper.png
 
-# ---- NUCLEAR: Saare other wallpapers DELETE karo -----------------
-# Sirf Lotus bachega, koi aur option hi nahi hoga picker mein!
-RUN find /usr/share/backgrounds -type f -delete 2>/dev/null || true && \
-    find /usr/share/xfce4/backdrops -type f -delete 2>/dev/null || true && \
-    rm -rf /usr/share/backgrounds/* 2>/dev/null || true
+# ---- Sirf FILES delete karo, FOLDERS mat chhuo! ------------------
+# XFCE ko /usr/share/backgrounds/xfce/ folder chahiye hota hai
+RUN find /usr/share/backgrounds -type f -delete 2>/dev/null || true
 
-# ---- Sirf Lotus wali folder banana -------------------------------
-RUN mkdir -p /usr/share/backgrounds/HeavenOS && \
-    cp /lotus-wallpaper.png /usr/share/backgrounds/HeavenOS/lotus.png && \
+# ---- XFCE wala folder aur Lotus wahi rakh do --------------------
+RUN mkdir -p /usr/share/backgrounds/xfce && \
+    cp /lotus-wallpaper.png /usr/share/backgrounds/xfce/lotus.png && \
     cp /lotus-wallpaper.png /defaults/bg.png
 
 # ---- Custom startup script ---------------------------------------
