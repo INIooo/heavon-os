@@ -5,7 +5,7 @@
 
 echo ""
 echo "======================================================================"
-echo "         HeavenOS - Arch Linux XFCE Desktop Launcher"
+echo "         HeavenOS - Ubuntu XFCE Desktop Launcher"
 echo "======================================================================"
 echo ""
 

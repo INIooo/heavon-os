@@ -1,13 +1,13 @@
 # ====================================================================
-#  HeavenOS - Based on Arch Linux XFCE (LinuxServer Webtop)
-#  v1.5 - Autostart fix for wallpaper
+#  HeavenOS - Based on Ubuntu XFCE (LinuxServer Webtop)
+#  v3.0 - Rock solid Ubuntu base for Cloud PC Service
 # ====================================================================
 
-FROM lscr.io/linuxserver/webtop:arch-xfce
+FROM lscr.io/linuxserver/webtop:ubuntu-xfce
 
 LABEL maintainer="HeavenOS"
-LABEL description="HeavenOS - Arch Linux XFCE Clean"
-LABEL version="2.0"
+LABEL description="HeavenOS - Ubuntu XFCE Base (Production Cloud PC)"
+LABEL version="3.0"
 
 ENV PUID=1000
 ENV PGID=1000

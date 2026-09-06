@@ -4,7 +4,7 @@
 
 NOTE: Ye poora setup Google Cloud Shell ke cloud server pe chalega.
 Apne local PC pe koi heavy file ya OS download karne ki zaroorat nahi hai.
-HeavenOS = Arch Linux XFCE (LinuxServer Webtop) with custom branding.
+HeavenOS = Ubuntu XFCE (LinuxServer Webtop) with custom branding.
 
 --------------------------------------------------------------------
 STEP 1: GOOGLE CLOUD SHELL OPEN KARO
@@ -27,7 +27,7 @@ Option B - Manual commands (same as how to start up.txt):
 
   docker run -d --name=heaven-os -p 8888:3000 --shm-size="1gb" \
     -e TITLE=HeavenOS \
-    lscr.io/linuxserver/webtop:arch-xfce
+    lscr.io/linuxserver/webtop:ubuntu-xfce
 
   (Image automatically download hogi aur background me launch ho jayegi)
 
@@ -51,7 +51,7 @@ Output me 3-5 seconds ke andar ek aisi link dikhegi:
   https://xxxx-xxxx-xxxx.trycloudflare.com
 
 Is link ko copy karo aur kisi bhi browser (Chrome/Edge/Phone) me open karo.
-Tumhare samne full HeavenOS (Arch Linux XFCE) Desktop load ho jayega!
+Tumhare samne full HeavenOS (Ubuntu XFCE) Desktop load ho jayega!
 
 NOTE: Is terminal tab ko band mat karna, jab tak terminal khula hai
 tab tak link chalegi.
