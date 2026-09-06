@@ -1,19 +1,20 @@
 # ====================================================================
 #  HeavenOS - Based on Ubuntu XFCE (LinuxServer Webtop)
-#  v6.2 - Clean WhiteSur Theme installation (-d /usr/share/themes)
+#  v6.3 - Fixed bash execution environment for WhiteSur installer
 # ====================================================================
 
 FROM lscr.io/linuxserver/webtop:ubuntu-xfce
 
 LABEL maintainer="HeavenOS"
 LABEL description="HeavenOS - Ubuntu XFCE macOS Sonoma Workstation"
-LABEL version="6.2"
+LABEL version="6.3"
 
 ENV PUID=1000
 ENV PGID=1000
 ENV TZ=Asia/Kolkata
 ENV TITLE=HeavenOS
 ENV DEBIAN_FRONTEND=noninteractive
+ENV SHELL=/bin/bash
 
 EXPOSE 3000
 
@@ -30,13 +31,13 @@ RUN apt-get update && \
 # ---- 2. Install WhiteSur GTK Theme (macOS Dark & Light) -----------
 RUN git clone --depth 1 https://github.com/vinceliuice/WhiteSur-gtk-theme.git /tmp/WhiteSur-gtk && \
     mkdir -p /usr/share/themes && \
-    /tmp/WhiteSur-gtk/install.sh -d /usr/share/themes && \
+    bash /tmp/WhiteSur-gtk/install.sh -d /usr/share/themes && \
     rm -rf /tmp/WhiteSur-gtk
 
 # ---- 3. Install WhiteSur Icon Theme (macOS Icons) ----------------
 RUN git clone --depth 1 https://github.com/vinceliuice/WhiteSur-icon-theme.git /tmp/WhiteSur-icons && \
     mkdir -p /usr/share/icons && \
-    /tmp/WhiteSur-icons/install.sh -d /usr/share/icons && \
+    bash /tmp/WhiteSur-icons/install.sh -d /usr/share/icons && \
     rm -rf /tmp/WhiteSur-icons
 
 # ---- 4. Developer Tools (Python3 & Node.js) ----------------------
