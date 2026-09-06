@@ -9,11 +9,9 @@ HeavenOS Features:
 - Base: Ubuntu XFCE (Ultra-stable, zero Wayland bugs)
 - Theme: macOS Sonoma Dark UI (WhiteSur GTK & Icons, Traffic Light Window Controls)
 - Dock: Animated Plank Dock at the bottom
-- Audio: PulseAudio WebRTC sound streaming enabled for browser
-- Branding: Custom browser tab title & favicon (HeavenOS Cloud Workstation ☁️)
 - Wallpaper: Permanent Lotus Wallpaper (Default system wallpapers purged)
 - Apps: Google Chrome, Discord, VS Code, Blender, GIMP, Audacity, VLC, FileZilla
-- Multi-Tenant: Spin up isolated Cloud PCs for multiple clients with custom titles
+- File Uploader: Drag & Drop web upload portal on Desktop
 
 --------------------------------------------------------------------
 STEP 1: GOOGLE CLOUD SHELL OPEN KARO
@@ -24,48 +22,37 @@ STEP 1: GOOGLE CLOUD SHELL OPEN KARO
 4. Terminal open ho jayega.
 
 --------------------------------------------------------------------
-STEP 2: HEAVENOS REPOSITORY CLONE & START KARO (SINGLE COMMAND)
+STEP 2: HEAVENOS REPOSITORY CLONE & START KARO
 --------------------------------------------------------------------
 Terminal me ye single command paste karke Enter dabao:
 
-cd ~ && docker rm -f heaven-os 2>/dev/null ; docker rmi heaven-os 2>/dev/null ; rm -rf heavon-os ; git clone https://github.com/INIooo/heavon-os.git && cd heavon-os && bash start_heaven_os.sh
+docker rm -f heaven-os 2>/dev/null ; docker rmi heaven-os 2>/dev/null ; rm -rf heavon-os ; git clone https://github.com/INIooo/heavon-os.git && cd heavon-os && bash start_heaven_os.sh
 
 (HeavenOS build ho kar Port 8888 par launch ho jayega!)
 
 --------------------------------------------------------------------
-STEP 3: MULTI-TENANT CLOUD PC MANAGEMENT (MULTIPLE CLIENTS)
+STEP 3: PUBLIC WEB LINK GENERATE KARO (MANUAL CLOUDFLARE TUNNEL)
 --------------------------------------------------------------------
-Agar alag-alag clients ke liye isolated Cloud PCs chalana chahte ho:
-
-1. Naya Client Cloud PC Create Karo:
-   bash create_client_pc.sh rahul 8888
-   bash create_client_pc.sh amit 8889
-   bash create_client_pc.sh client3 8890
-
-2. Sabhi Active Clients List Karo:
-   bash create_client_pc.sh list
-
-3. Kisi Client PC ko Stop Karo:
-   bash create_client_pc.sh stop rahul
-
-4. Kisi Client PC ko Delete Karo:
-   bash create_client_pc.sh delete rahul
-
-5. Client PC ke liye Dedicated Public Link Launch Karo:
-   bash create_client_pc.sh tunnel rahul
-
---------------------------------------------------------------------
-STEP 4: PUBLIC WEB LINK GENERATE KARO (STANDALONE CLOUDFLARE TUNNEL)
---------------------------------------------------------------------
-Agar default instance (Port 8888) ke liye public web link chahiye,
-terminal me ye command run karo:
+Agar tumhe public web link (browser/phone se access karne ke liye) chahiye,
+toh terminal me ye command run karo:
 
 curl -L --output cloudflared https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 && chmod +x cloudflared && ./cloudflared tunnel --url http://localhost:8888
 
 Output me ek public link dikhegi:
   https://xxxx-xxxx.trycloudflare.com
 
-Is link ko copy karke browser me kholo — macOS Sonoma Desktop khul jayega!
+Is link ko copy karke kisi bhi browser me kholo — Full HeavenOS macOS Sonoma Desktop khul jayega!
+
+--------------------------------------------------------------------
+STEP 4: FILES UPLOAD KAISE KAREIN (LOCAL PC TO HEAVENOS)
+--------------------------------------------------------------------
+Method A (Desktop App):
+  - HeavenOS Desktop par "Upload Files" icon par double-click karo.
+  - Web Uploader khulega — drag & drop karo, files direct Desktop par aa jayengi!
+
+Method B (Webtop Side Menu):
+  - Browser window me top-left edge par chhota arrow (`<`) menu open karo.
+  - "Upload" icon par click karke local PC se files select karo.
 
 --------------------------------------------------------------------
 STEP 5: HEAVENOS BAND / SHUTDOWN KAISE KAREIN

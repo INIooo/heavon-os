@@ -1,39 +1,40 @@
 # ====================================================================
 #  HeavenOS - Based on Ubuntu XFCE (LinuxServer Webtop)
-#  v8.0 - Audio Streaming, Web Title Branding, Multi-Tenant Support
+#  v7.0 - Bulletproof macOS Theme (Direct Copy - No Install Scripts)
 # ====================================================================
 
 FROM lscr.io/linuxserver/webtop:ubuntu-xfce
 
 LABEL maintainer="HeavenOS"
 LABEL description="HeavenOS - Ubuntu XFCE macOS Sonoma Workstation"
-LABEL version="8.0"
+LABEL version="7.0"
 
 ENV PUID=1000
 ENV PGID=1000
 ENV TZ=Asia/Kolkata
-ENV TITLE="HeavenOS Cloud Workstation ☁️"
+ENV TITLE=HeavenOS
 ENV DEBIAN_FRONTEND=noninteractive
 
 EXPOSE 3000
 
-# ---- 1. Enable Repositories, Audio & Base Utilities --------------
+# ---- 1. Enable Repositories & Base Utilities ---------------------
 RUN apt-get update && \
     apt-get install -y \
     software-properties-common ca-certificates curl wget gnupg git \
-    gtk2-engines-murrine gtk2-engines-pixbuf plank \
-    pulseaudio pulseaudio-utils pavucontrol alsa-utils && \
+    gtk2-engines-murrine gtk2-engines-pixbuf plank && \
     add-apt-repository -y universe && \
     add-apt-repository -y multiverse && \
     apt-get update
 
 # ---- 2. Install WhiteSur GTK Theme (macOS Traffic Lights & Dark UI) ---
+# Direct copy — 100% fail-proof, no script dependency errors!
 RUN git clone --depth 1 https://github.com/vinceliuice/WhiteSur-gtk-theme.git /tmp/WhiteSur-gtk && \
     mkdir -p /usr/share/themes/WhiteSur-Dark && \
     cp -r /tmp/WhiteSur-gtk/src/* /usr/share/themes/WhiteSur-Dark/ && \
     rm -rf /tmp/WhiteSur-gtk
 
 # ---- 3. Install WhiteSur Icon Theme (macOS Icons) ----------------
+# Direct copy — 100% fail-proof!
 RUN git clone --depth 1 https://github.com/vinceliuice/WhiteSur-icon-theme.git /tmp/WhiteSur-icons && \
     mkdir -p /usr/share/icons/WhiteSur && \
     cp -r /tmp/WhiteSur-icons/src/* /usr/share/icons/WhiteSur/ 2>/dev/null || true && \

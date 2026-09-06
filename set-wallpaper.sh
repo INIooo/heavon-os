@@ -24,14 +24,6 @@ cp -f /lotus-wallpaper.png /defaults/bg.png 2>/dev/null || true
 # ---- Clear old cached desktop settings ---------------------------
 rm -rf /config/.cache/xfce4/desktop 2>/dev/null || true
 
-# ---- Custom Web Title Branding Overrides ---------------------------
-find /usr/share/kasmvnc/www /defaults -name "*.html" -exec sed -i 's/<title>.*<\/title>/<title>HeavenOS Cloud Workstation ☁️<\/title>/g' {} 2>/dev/null \; || true
-
-# ---- PulseAudio Auto-start for Audio Streaming --------------------
-if ! pgrep -x "pulseaudio" > /dev/null; then
-    pulseaudio --start --exit-idle-time=-1 2>/dev/null || true
-fi
-
 # ---- apply-wallpaper script system copy --------------------------
 cp /apply-wallpaper.sh /usr/local/bin/apply-lotus-wallpaper.sh
 chmod +x /usr/local/bin/apply-lotus-wallpaper.sh
@@ -59,8 +51,192 @@ X-GNOME-Autostart-enabled=true
 EOF
 
 # ====================================================================
+#  HEAVENOS FILE UPLOADER SERVICE (Drag & Drop File Upload Portal)
+# ====================================================================
+cat > /usr/local/bin/heaven-uploader.py << 'PYEOF'
+import os
+import re
+from http.server import HTTPServer, BaseHTTPRequestHandler
+
+PORT = 8889
+DEST_DIR = "/config/Desktop"
+os.makedirs(DEST_DIR, exist_ok=True)
+
+class UploadHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header('Content-type', 'text/html')
+        self.end_headers()
+        html = '''<!DOCTYPE html>
+<html>
+<head>
+    <title>HeavenOS File Drop</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #0b0f19; color: #e2e8f0; margin:0; padding: 20px; display:flex; justify-content:center; align-items:center; min-height:100vh; }
+        .card { background: #161e2e; border: 1px solid #2d3748; padding: 35px; border-radius: 16px; width: 100%; max-width: 550px; text-align: center; box-shadow: 0 20px 30px rgba(0,0,0,0.5); }
+        h2 { color: #38bdf8; font-size: 24px; margin-top: 0; margin-bottom: 8px; }
+        p { color: #94a3b8; font-size: 14px; margin-bottom: 25px; }
+        .drop-area { border: 2px dashed #38bdf8; background: rgba(56, 189, 248, 0.04); border-radius: 12px; padding: 40px 20px; cursor: pointer; transition: 0.3s; }
+        .drop-area:hover, .drop-area.highlight { background: rgba(56, 189, 248, 0.12); border-color: #7dd3fc; }
+        .icon { font-size: 48px; margin-bottom: 10px; display:block; }
+        input[type="file"] { display: none; }
+        .btn { background: linear-gradient(135deg, #0284c7, #2563eb); color: white; border: none; padding: 12px 28px; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 20px; transition: 0.2s; box-shadow: 0 4px 12px rgba(2,132,199,0.3); }
+        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+        #status { margin-top: 20px; font-size: 14px; font-weight: 600; }
+        .progress-bar { width: 100%; background: #1e293b; height: 8px; border-radius: 4px; overflow: hidden; margin-top: 15px; display: none; }
+        .progress-fill { height: 100%; background: #38bdf8; width: 0%; transition: width 0.1s; }
+        .file-info { margin-top: 15px; font-size: 13px; color: #a0aec0; text-align: left; background: #0f172a; padding: 10px; border-radius: 6px; display: none; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <span class="icon">☁️</span>
+        <h2>HeavenOS File Uploader</h2>
+        <p>Upload video, audio, images, 3D models or editing files directly to your HeavenOS Desktop!</p>
+
+        <div class="drop-area" id="dropArea" onclick="document.getElementById('fileInput').click()">
+            📁 <br><b>Click to Choose Files</b> or Drag & Drop here
+            <input type="file" id="fileInput" multiple onchange="handleFiles(this.files)">
+        </div>
+
+        <div class="file-info" id="fileInfo"></div>
+        <div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
+        <button class="btn" onclick="uploadFiles()">Upload Files</button>
+        <div id="status"></div>
+    </div>
+
+    <script>
+        let selectedFiles = [];
+        const dropArea = document.getElementById('dropArea');
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) { e.preventDefault(); e.stopPropagation(); }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropArea.classList.add('highlight');
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropArea.classList.remove('highlight');
+        });
+
+        dropArea.addEventListener('drop', (e) => {
+            let dt = e.dataTransfer;
+            handleFiles(dt.files);
+        });
+
+        function handleFiles(files) {
+            selectedFiles = Array.from(files);
+            let info = document.getElementById('fileInfo');
+            info.style.display = 'block';
+            info.innerHTML = '<b>Selected Files:</b><br>' + selectedFiles.map(f => '• ' + f.name + ' (' + (f.size/1024/1024).toFixed(2) + ' MB)').join('<br>');
+        }
+
+        function uploadFiles() {
+            if (!selectedFiles.length) { alert('Select at least one file!'); return; }
+            let status = document.getElementById('status');
+            let pBar = document.getElementById('progressBar');
+            let pFill = document.getElementById('progressFill');
+
+            status.style.color = '#38bdf8';
+            status.innerText = 'Uploading...';
+            pBar.style.display = 'block';
+
+            let formData = new FormData();
+            selectedFiles.forEach(f => formData.append('files', f));
+
+            let xhr = new XMLHttpRequest();
+            xhr.open('POST', '/upload', true);
+
+            xhr.upload.onprogress = function(e) {
+                if (e.lengthComputable) {
+                    let percent = (e.loaded / e.total) * 100;
+                    pFill.style.width = percent + '%';
+                }
+            };
+
+            xhr.onload = function() {
+                if (xhr.status == 200) {
+                    status.style.color = '#4ade80';
+                    status.innerText = '✅ Upload Successful! Files saved to Desktop.';
+                    selectedFiles = [];
+                    document.getElementById('fileInfo').style.display = 'none';
+                    setTimeout(() => { pBar.style.display = 'none'; pFill.style.width = '0%'; }, 2000);
+                } else {
+                    status.style.color = '#f87171';
+                    status.innerText = '❌ Upload Failed!';
+                }
+            };
+
+            xhr.send(formData);
+        }
+    </script>
+</body>
+</html>'''
+        self.wfile.write(html.encode('utf-8'))
+
+    def do_POST(self):
+        if self.path == '/upload':
+            length = int(self.headers.get('Content-Length', 0))
+            body = self.rfile.read(length)
+            content_type = self.headers.get('Content-Type', '')
+            
+            boundary = content_type.split('boundary=')[-1].encode()
+            parts = body.split(b'--' + boundary)
+            
+            for part in parts:
+                if b'filename="' in part:
+                    match = re.search(r'filename="([^"]+)"', part.decode('utf-8', errors='ignore'))
+                    if match:
+                        filename = os.path.basename(match.group(1))
+                        header_end = part.find(b'\r\n\r\n')
+                        if header_end != -1:
+                            file_data = part[header_end + 4:].rstrip(b'\r\n')
+                            filepath = os.path.join(DEST_DIR, filename)
+                            with open(filepath, 'wb') as f:
+                                f.write(file_data)
+                            os.chmod(filepath, 0o777)
+            
+            self.send_response(200)
+            self.end_headers()
+            self.wfile.write(b"OK")
+
+def run():
+    server = HTTPServer(('0.0.0.0', PORT), UploadHandler)
+    server.serve_forever()
+
+if __name__ == '__main__':
+    run()
+PYEOF
+chmod +x /usr/local/bin/heaven-uploader.py
+
+# Start uploader daemon in background
+if ! pgrep -f "heaven-uploader.py" > /dev/null; then
+    python3 /usr/local/bin/heaven-uploader.py &
+fi
+
+# ====================================================================
 #  DESKTOP SHORTCUTS (Full HeavenOS App Suite)
 # ====================================================================
+
+cat > "$DESKTOP_DIR/Upload Files.desktop" << 'EOF'
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Upload Files
+Comment=Drag & Drop File Upload Portal
+Exec=google-chrome-stable --no-sandbox http://localhost:8889
+Icon=folder-download
+Terminal=false
+Categories=Utility;FileTransfer;
+StartupNotify=true
+EOF
+chmod +x "$DESKTOP_DIR/Upload Files.desktop"
 
 cat > "$DESKTOP_DIR/Chrome.desktop" << 'EOF'
 [Desktop Entry]
@@ -205,6 +381,11 @@ chmod +x "$DESKTOP_DIR/Terminal.desktop"
 # ====================================================================
 #  PLANK DOCK LAUNCHERS (macOS Dock)
 # ====================================================================
+cat > "$PLANK_DIR/UploadFiles.dockitem" << 'EOF'
+[PlankDockItemPreferences]
+Launcher=file:///config/Desktop/Upload Files.desktop
+EOF
+
 cat > "$PLANK_DIR/Chrome.dockitem" << 'EOF'
 [PlankDockItemPreferences]
 Launcher=file:///config/Desktop/Chrome.desktop
@@ -277,6 +458,43 @@ cat > "$CONFIG_DIR/xfwm4.xml" << 'WMEOF'
 </channel>
 WMEOF
 
+# ---- REMOVE ALL XFCE PANELS (Keep only macOS Plank Dock at bottom) --
+rm -f "$CONFIG_DIR/xfce4-panel.xml"
+cat > "$CONFIG_DIR/xfce4-panel.xml" << 'PANELXML'
+<?xml version="1.0" encoding="UTF-8"?>
+<channel name="xfce4-panel" version="1.0">
+  <property name="configver" type="int" value="2"/>
+  <property name="panels" type="array"/>
+</channel>
+PANELXML
+
+# ---- GTK3 CSS Override (macOS Translucent Top Bar & No White Box) ---
+mkdir -p /config/.config/gtk-3.0
+cat > /config/.config/gtk-3.0/gtk.css << 'CSSEOF'
+/* macOS Sonoma Top Bar Translucent Styling */
+.xfce4-panel,
+panel-window {
+    background-color: rgba(15, 23, 42, 0.85) !important;
+    color: #f8fafc !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Remove white background box from top-left button & all panel buttons */
+.xfce4-panel button,
+.xfce4-panel button:hover,
+.xfce4-panel button:checked,
+.xfce4-panel button:active,
+#applicationsmenu-button,
+#whiskermenu-button,
+.xfce4-panel .flat {
+    background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: #f8fafc !important;
+}
+CSSEOF
+
 # ---- PERMANENT XFCE DESKTOP XML CONFIG -----------------------------
 chattr -i "$CONFIG_DIR/xfce4-desktop.xml" 2>/dev/null || true
 cat > "$CONFIG_DIR/xfce4-desktop.xml" << XMLEOF
@@ -313,5 +531,6 @@ XMLEOF
 # ---- Ownership fix -----------------------------------------------
 chown -R abc:abc /config/ 2>/dev/null || true
 chown abc:abc /usr/local/bin/apply-lotus-wallpaper.sh
+chown abc:abc /usr/local/bin/heaven-uploader.py
 
 echo "[HeavenOS] macOS Sonoma UI + WhiteSur Theme + Plank Dock Registered!"
