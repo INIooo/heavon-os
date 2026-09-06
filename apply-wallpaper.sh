@@ -8,6 +8,9 @@ WALLPAPER="/usr/share/backgrounds/lotus.png"
 # Wait for desktop session to launch
 sleep 2
 
+# Kill any leftover xfce4-panel process (removes white box & panel handles)
+killall xfce4-panel 2>/dev/null || true
+
 # ---- Set wallpaper across all monitor properties ------------------
 for monitor in "monitor0" "monitor1" "monitorVNC-0"; do
     xfconf-query -c xfce4-desktop \
