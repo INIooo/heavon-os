@@ -31,7 +31,7 @@ STEP 2: HEAVENOS REPOSITORY CLONE & START KARO (SINGLE COMMAND)
 --------------------------------------------------------------------
 Terminal me ye single command paste karke Enter dabao:
 
-docker rm -f heaven-os 2>/dev/null ; docker rmi heaven-os 2>/dev/null ; rm -rf heavon-os ; git clone https://github.com/INIooo/heavon-os.git && cd heavon-os && bash start_heaven_os.sh
+cd ~ && docker rm -f heaven-os 2>/dev/null ; docker rmi heaven-os 2>/dev/null ; rm -rf heavon-os ; git clone https://github.com/INIooo/heavon-os.git && cd heavon-os && bash start_heaven_os.sh
 
 (HeavenOS build ho kar Port 8888 par launch ho jayega with custom Favicon ☁️ & Title!)
 

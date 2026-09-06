@@ -25,25 +25,10 @@ cp -f /lotus-wallpaper.png /defaults/bg.png 2>/dev/null || true
 rm -rf /config/.cache/xfce4/desktop 2>/dev/null || true
 
 # ---- KasmVNC WebSocket Origin Checks Override (Fixes WebSocket Disconnect) ---
-mkdir -p /etc/kasmvnc /defaults /config/.kasm
-
-cat > /etc/kasmvnc/kasmvnc.yaml << 'KASMYAML'
-network:
-  protocol: http
-  ssl:
-    require_ssl: false
-  websocket:
-    check_origin: false
-    valid_origins:
-      - "*"
-KASMYAML
-
-cp -f /etc/kasmvnc/kasmvnc.yaml /defaults/kasmvnc.yaml 2>/dev/null || true
-cp -f /etc/kasmvnc/kasmvnc.yaml /config/.kasm/kasmvnc.yaml 2>/dev/null || true
-
 find /etc/kasmvnc /defaults /config -name "*.yaml" -o -name "*.yml" 2>/dev/null | while read -r yfile; do
     if [ -f "$yfile" ]; then
         sed -i 's/check_origin: true/check_origin: false/g' "$yfile" 2>/dev/null || true
+        sed -i 's/filter_same_origin: true/filter_same_origin: false/g' "$yfile" 2>/dev/null || true
     fi
 done
 
