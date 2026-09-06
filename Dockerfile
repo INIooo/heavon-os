@@ -22,7 +22,6 @@ COPY Lotus-Wallpaper-Upscaled16x.png /lotus-wallpaper.png
 # ---- Purge ALL default system wallpapers & override with Lotus ---
 RUN rm -rf /usr/share/backgrounds/* /usr/share/wallpapers/* /usr/share/images/* /defaults/bg.png 2>/dev/null || true && \
     mkdir -p /usr/share/backgrounds/xfce /usr/share/wallpapers /defaults && \
-    cp /lotus-wallpaper.png /lotus-wallpaper.png && \
     cp /lotus-wallpaper.png /defaults/bg.png && \
     cp /lotus-wallpaper.png /usr/share/backgrounds/lotus.png && \
     cp /lotus-wallpaper.png /usr/share/backgrounds/xfce/lotus.png && \
