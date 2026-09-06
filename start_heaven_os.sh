@@ -1,11 +1,11 @@
 #!/bin/bash
 # ====================================================================
-#  HeavenOS - Startup Script
+#  HeavenOS - Startup Script (60 FPS Performance Mode)
 # ====================================================================
 
 echo ""
 echo "======================================================================"
-echo "         HeavenOS - Ubuntu XFCE Desktop Launcher"
+echo "         HeavenOS - Ubuntu XFCE Desktop Launcher (60 FPS Mode)"
 echo "======================================================================"
 echo ""
 
@@ -26,19 +26,23 @@ echo "[✓] Image ready!"
 
 echo ""
 
-# ---- STEP 3: Container run karo -----------------------------------
-echo "[→] HeavenOS container start ho raha hai..."
+# ---- STEP 3: Container run karo (60 FPS Performance Tuned) -------
+echo "[→] HeavenOS container start ho raha hai (60 FPS Mode)..."
 
 docker rm -f heaven-os 2>/dev/null
 
 docker run -d \
     --name=heaven-os \
     -p 8888:3000 \
-    --shm-size="1gb" \
+    --shm-size="2gb" \
     -e PUID=1000 \
     -e PGID=1000 \
     -e TZ=Asia/Kolkata \
     -e TITLE=HeavenOS \
+    -e CUSTOM_FRAME_RATE=60 \
+    -e FRAME_RATE=60 \
+    -e WEBTOP_FPS=60 \
+    -e MAX_FPS=60 \
     heaven-os
 
 if [ $? -ne 0 ]; then
@@ -48,7 +52,7 @@ fi
 
 echo ""
 echo "======================================================================"
-echo "  [✓] HeavenOS Container Successfully Started!"
+echo "  [✓] HeavenOS Container Started in 60 FPS High-Performance Mode!"
 echo "  Access Link: http://localhost:8888 (Port 8888)"
 echo "======================================================================"
 echo ""

@@ -445,7 +445,15 @@ cat > "$CONFIG_DIR/xsettings.xml" << 'XSETEOF'
 </channel>
 XSETEOF
 
-# ---- XFWM4 Window Manager (macOS Traffic Light Buttons on Left) ----
+# ---- 60 FPS PERFORMANCE & KASMVNC ENCODER TUNING ------------------
+for conf in /etc/kasmvnc/kasmvnc.yaml /config/.vnc/kasmvnc.yaml /config/.kasmdock/kasmvnc.yaml; do
+    if [ -f "$conf" ]; then
+        sed -i 's/max_frame_rate: [0-9]*/max_frame_rate: 60/g' "$conf" 2>/dev/null || true
+        sed -i 's/frame_rate: [0-9]*/frame_rate: 60/g' "$conf" 2>/dev/null || true
+    fi
+done
+
+# ---- XFWM4 Window Manager (macOS Traffic Lights + 60 FPS VSync) ---
 cat > "$CONFIG_DIR/xfwm4.xml" << 'WMEOF'
 <?xml version="1.0" encoding="UTF-8"?>
 <channel name="xfwm4" version="1.0">
@@ -454,6 +462,11 @@ cat > "$CONFIG_DIR/xfwm4.xml" << 'WMEOF'
     <property name="button_layout" type="string" value="CMH|"/>
     <property name="title_alignment" type="string" value="center"/>
     <property name="title_font" type="string" value="Ubuntu Bold 10"/>
+    <property name="use_compositing" type="bool" value="true"/>
+    <property name="unredirect_overlays" type="bool" value="true"/>
+    <property name="vblank_mode" type="string" value="off"/>
+    <property name="box_resize" type="bool" value="true"/>
+    <property name="box_move" type="bool" value="true"/>
   </property>
 </channel>
 WMEOF
