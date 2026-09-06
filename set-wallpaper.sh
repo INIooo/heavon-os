@@ -144,8 +144,20 @@ cat > "$CONFIG_DIR/xfce4-desktop.xml" << 'XMLEOF'
 </channel>
 XMLEOF
 
+# ====================================================================
+#  APPS INSTALL (Background mein - OS instantly ready!)
+# ====================================================================
+# Blender pehle run pe background mein install hoga
+# User OS use kar sakta hai install hote waqt!
+if ! command -v blender &>/dev/null; then
+    echo "[HeavenOS] Blender install ho raha hai background mein..."
+    (pacman -Sy --noconfirm blender >> /var/log/heaven-install.log 2>&1 && \
+     echo "[HeavenOS] Blender install complete!") &
+fi
+
 # ---- Ownership fix -----------------------------------------------
 chown -R abc:abc /config/ 2>/dev/null || true
 chown abc:abc /usr/local/bin/apply-lotus-wallpaper.sh
 
 echo "[HeavenOS] Desktop icons + wallpaper autostart registered!"
+echo "[HeavenOS] Blender background mein install ho raha hai (agar pehli baar hai)"
