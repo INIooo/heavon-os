@@ -6,8 +6,8 @@
 FROM lscr.io/linuxserver/webtop:arch-xfce
 
 LABEL maintainer="HeavenOS"
-LABEL description="HeavenOS - Arch Linux XFCE (Fast Build)"
-LABEL version="1.8"
+LABEL description="HeavenOS - Arch Linux XFCE Clean"
+LABEL version="2.0"
 
 ENV PUID=1000
 ENV PGID=1000
@@ -18,12 +18,6 @@ EXPOSE 3000
 
 # ---- Lotus wallpaper copy karo -----------------------------------
 COPY Lotus-Wallpaper-Upscaled16x.png /lotus-wallpaper.png
-
-# ---- Only lightweight tools install (build fast rakho!) ----------
-# Whisker Menu sirf ~5MB hai — fast!
-RUN pacman -Sy --noconfirm xfce4-whiskermenu-plugin && \
-    pacman -Scc --noconfirm
-# NOTE: Blender pehle container start pe install hoga (set-wallpaper.sh se)
 
 
 # ---- Sirf FILES delete karo, XFCE folders intact rakho -----------
