@@ -41,7 +41,7 @@ docker rm -f heaven-os 2>/dev/null
 docker run -d \
     --name=heaven-os \
     -p 8888:3000 \
-    --shm-size="1gb" \
+    --shm-size="2gb" \
     -e PUID=1000 \
     -e PGID=1000 \
     -e TZ=Asia/Kolkata \

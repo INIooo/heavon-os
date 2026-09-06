@@ -591,24 +591,6 @@ cat > "$PLANK_DIR/Terminal.dockitem" << 'EOF'
 [PlankDockItemPreferences]
 Launcher=file:///config/Desktop/Terminal.desktop
 EOF
-[PlankDockItemPreferences]
-Launcher=file:///config/Desktop/Blender.desktop
-EOF
-
-cat > "$PLANK_DIR/GIMP.dockitem" << 'EOF'
-[PlankDockItemPreferences]
-Launcher=file:///config/Desktop/GIMP.desktop
-EOF
-
-cat > "$PLANK_DIR/Files.dockitem" << 'EOF'
-[PlankDockItemPreferences]
-Launcher=file:///config/Desktop/Files.desktop
-EOF
-
-cat > "$PLANK_DIR/Terminal.dockitem" << 'EOF'
-[PlankDockItemPreferences]
-Launcher=file:///config/Desktop/Terminal.desktop
-EOF
 
 # ====================================================================
 #  macOS SONOMA UI CONFIGURATION (WhiteSur GTK & Icons + Traffic Lights)
