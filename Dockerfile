@@ -6,8 +6,8 @@
 FROM lscr.io/linuxserver/webtop:arch-xfce
 
 LABEL maintainer="HeavenOS"
-LABEL description="HeavenOS - Arch Linux XFCE (Blender + Lotus Wallpaper)"
-LABEL version="1.6"
+LABEL description="HeavenOS - Arch Linux XFCE (Blender + Whisker Menu)"
+LABEL version="1.7"
 
 ENV PUID=1000
 ENV PGID=1000
@@ -20,9 +20,9 @@ EXPOSE 3000
 COPY Lotus-Wallpaper-Upscaled16x.png /lotus-wallpaper.png
 
 # ---- APPS Install karo -------------------------------------------
-# Blender - Latest version (Arch rolling release)
+# Blender + Whisker Menu (App Launcher with search)
 RUN pacman -Syu --noconfirm && \
-    pacman -S --noconfirm blender && \
+    pacman -S --noconfirm blender xfce4-whiskermenu-plugin && \
     pacman -Scc --noconfirm
 
 
