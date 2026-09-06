@@ -10,12 +10,9 @@ HeavenOS Features:
 - Theme: macOS Sonoma Dark UI (WhiteSur GTK & Icons, Traffic Light Window Controls)
 - Dock: Animated Plank Dock at the bottom
 - Audio: PulseAudio WebRTC sound streaming enabled for browser
-- Branding: Custom browser tab title & favicon (☁️ Cloud Icon + Custom Title)
-- WebSocket Fix: KasmVNC origin check bypassed for 100% stable remote connections
+- Branding: Custom browser tab title & favicon (HeavenOS Cloud Workstation ☁️)
 - Wallpaper: Permanent Lotus Wallpaper (Default system wallpapers purged)
 - Apps: Google Chrome, Discord, VS Code, Blender, GIMP, Audacity, VLC, FileZilla
-- Bidirectional File Portal: Drag & Drop Upload AND Direct File Download (Port 8889)
-- Speedtest Tool: 1-Click Cloud Network Speedometer (1-2 Gbps+ Cloud Shell speed)
 - Multi-Tenant: Spin up isolated Cloud PCs for multiple clients with custom titles
 
 --------------------------------------------------------------------
@@ -33,7 +30,7 @@ Terminal me ye single command paste karke Enter dabao:
 
 cd ~ && docker rm -f heaven-os 2>/dev/null ; docker rmi heaven-os 2>/dev/null ; rm -rf heavon-os ; git clone https://github.com/INIooo/heavon-os.git && cd heavon-os && bash start_heaven_os.sh
 
-(HeavenOS build ho kar Port 8888 par launch ho jayega with custom Favicon ☁️ & Title!)
+(HeavenOS build ho kar Port 8888 par launch ho jayega!)
 
 --------------------------------------------------------------------
 STEP 3: MULTI-TENANT CLOUD PC MANAGEMENT (MULTIPLE CLIENTS)
@@ -63,34 +60,15 @@ STEP 4: PUBLIC WEB LINK GENERATE KARO (STANDALONE CLOUDFLARE TUNNEL)
 Agar default instance (Port 8888) ke liye public web link chahiye,
 terminal me ye command run karo:
 
-curl -L --output cloudflared https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 && chmod +x cloudflared && ./cloudflared tunnel --url http://127.0.0.1:8888
+curl -L --output cloudflared https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 && chmod +x cloudflared && ./cloudflared tunnel --url http://localhost:8888
 
 Output me ek public link dikhegi:
   https://xxxx-xxxx.trycloudflare.com
 
-Is link ko copy karke browser me kholo — Favicon ☁️ aur Title "HeavenOS Cloud Workstation ☁️" dikhega!
+Is link ko copy karke browser me kholo — macOS Sonoma Desktop khul jayega!
 
 --------------------------------------------------------------------
-STEP 5: BIDIRECTIONAL FILE TRANSFER (LOCAL PC ↔ HEAVENOS)
---------------------------------------------------------------------
-Method A (File Portal Desktop App):
-  - HeavenOS Desktop par "File Portal" icon par double-click karo (ya Dock se open karo).
-  - Web Portal (Port 8889) khulega:
-    • UPLOAD: Files drag & drop karo — direct Cloud Desktop par save ho jayengi.
-    • DOWNLOAD: Desktop pe rakhi kisi bhi file ke samne "📥 Download" button dabao — direct Local PC me download ho jayegi!
-
-Method B (Webtop Side Menu):
-  - Browser window me top-left edge par chhota arrow (`<`) menu open karo.
-  - "Upload" icon par click karke local PC se files select karo.
-
---------------------------------------------------------------------
-STEP 6: CLOUD SPEEDTEST TOOL (NETWORK PERFORMANCE)
---------------------------------------------------------------------
-- HeavenOS Desktop par "Speedtest" icon par double-click karo (ya Dock me click karo).
-- Terminal khulega aur Cloud Shell ke 1-2 Gbps+ high speed download/upload stats test karke dikha dega!
-
---------------------------------------------------------------------
-STEP 7: HEAVENOS BAND / SHUTDOWN KAISE KAREIN
+STEP 5: HEAVENOS BAND / SHUTDOWN KAISE KAREIN
 --------------------------------------------------------------------
 1. Cloudflare tunnel band karne ke liye terminal me dabao:
    Ctrl + C

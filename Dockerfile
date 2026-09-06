@@ -14,8 +14,6 @@ ENV PGID=1000
 ENV TZ=Asia/Kolkata
 ENV TITLE="HeavenOS Cloud Workstation ☁️"
 ENV DEBIAN_FRONTEND=noninteractive
-ENV KASM_DISABLE_ORIGIN_CHECK=true
-ENV DISABLE_ORIGIN_CHECK=true
 
 EXPOSE 3000
 
@@ -41,9 +39,9 @@ RUN git clone --depth 1 https://github.com/vinceliuice/WhiteSur-icon-theme.git /
     cp -r /tmp/WhiteSur-icons/src/* /usr/share/icons/WhiteSur/ 2>/dev/null || true && \
     rm -rf /tmp/WhiteSur-icons
 
-# ---- 4. Developer Tools (Python3, Node.js & Speedtest) -----------
+# ---- 4. Developer Tools (Python3 & Node.js) ----------------------
 RUN apt-get install -y \
-    python3 python3-pip python3-venv nodejs speedtest-cli && \
+    python3 python3-pip python3-venv nodejs && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 

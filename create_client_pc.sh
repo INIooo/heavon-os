@@ -133,7 +133,7 @@ case "$ACTION" in
         docker run -d \
             --name="${CONTAINER_NAME}" \
             -p "${PORT}:3000" \
-            --shm-size="2gb" \
+            --shm-size="1gb" \
             -e PUID=1000 \
             -e PGID=1000 \
             -e TZ=Asia/Kolkata \

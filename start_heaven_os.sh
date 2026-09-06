@@ -41,7 +41,7 @@ docker rm -f heaven-os 2>/dev/null
 docker run -d \
     --name=heaven-os \
     -p 8888:3000 \
-    --shm-size="2gb" \
+    --shm-size="1gb" \
     -e PUID=1000 \
     -e PGID=1000 \
     -e TZ=Asia/Kolkata \
@@ -57,6 +57,5 @@ echo ""
 echo "======================================================================"
 echo "  [✓] HeavenOS Container Successfully Started!"
 echo "  Access Link: http://localhost:8888 (Port 8888)"
-echo "  Favicon & Title: Custom ☁️ Favicon & HeavenOS Branding Loaded"
 echo "======================================================================"
 echo ""
