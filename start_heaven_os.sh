@@ -1,6 +1,6 @@
 #!/bin/bash
 # ====================================================================
-#  HeavenOS - Startup Script (OPTIMIZED - fast launch)
+#  HeavenOS - Startup Script
 # ====================================================================
 
 echo ""
@@ -46,22 +46,9 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-echo "[✓] Container start ho gaya!"
 echo ""
-
-# ---- STEP 4: Cloudflare Tunnel ------------------------------------
-echo "[→] Cloudflare Tunnel download ho raha hai..."
-curl -sL --output cloudflared \
-    https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 \
-    && chmod +x cloudflared
-echo "[✓] Done!"
-echo ""
-
-# ---- STEP 5: Public link ------------------------------------------
 echo "======================================================================"
-echo "  Link aa rahi hai... Browser ya phone mein kholo!"
-echo "  TERMINAL BAND MAT KARNA!"
+echo "  [✓] HeavenOS Container Successfully Started!"
+echo "  Access Link: http://localhost:8888 (Port 8888)"
 echo "======================================================================"
 echo ""
-
-./cloudflared tunnel --url http://localhost:8888

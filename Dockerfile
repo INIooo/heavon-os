@@ -1,13 +1,13 @@
 # ====================================================================
 #  HeavenOS - Based on Ubuntu XFCE (LinuxServer Webtop)
-#  v5.3 - Fixed NodeSource npm conflict & apt dependencies
+#  v6.0 - macOS Sonoma Theme (WhiteSur GTK, Icons, Plank Dock)
 # ====================================================================
 
 FROM lscr.io/linuxserver/webtop:ubuntu-xfce
 
 LABEL maintainer="HeavenOS"
-LABEL description="HeavenOS - Ubuntu XFCE Base with Full Application Suite"
-LABEL version="5.3"
+LABEL description="HeavenOS - Ubuntu XFCE macOS Sonoma Workstation"
+LABEL version="6.0"
 
 ENV PUID=1000
 ENV PGID=1000
@@ -17,29 +17,39 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 EXPOSE 3000
 
-# ---- 1. Enable Universe & Multiverse Repositories ----------------
+# ---- 1. Enable Repositories & Base Utilities ---------------------
 RUN apt-get update && \
     apt-get install -y \
-    software-properties-common ca-certificates curl wget gnupg git && \
+    software-properties-common ca-certificates curl wget gnupg git \
+    gtk2-engines-murrine gtk2-engines-pixbuf sassc optipng bc plank && \
     add-apt-repository -y universe && \
     add-apt-repository -y multiverse && \
     apt-get update
 
-# ---- 2. Developer Tools (Python3 & Node.js) ----------------------
-# Note: 'nodejs' package from NodeSource already includes 'npm'
+# ---- 2. Install WhiteSur GTK Theme (macOS Dark) -------------------
+RUN git clone --depth 1 https://github.com/vinceliuice/WhiteSur-gtk-theme.git /tmp/WhiteSur-gtk && \
+    /tmp/WhiteSur-gtk/install.sh -c Dark -t default -N glass --dest /usr/share/themes && \
+    rm -rf /tmp/WhiteSur-gtk
+
+# ---- 3. Install WhiteSur Icon Theme (macOS Icons) ----------------
+RUN git clone --depth 1 https://github.com/vinceliuice/WhiteSur-icon-theme.git /tmp/WhiteSur-icons && \
+    /tmp/WhiteSur-icons/install.sh -d /usr/share/icons -s bold && \
+    rm -rf /tmp/WhiteSur-icons
+
+# ---- 4. Developer Tools (Python3 & Node.js) ----------------------
 RUN apt-get install -y \
     python3 python3-pip python3-venv nodejs && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# ---- 3. Creative & Multimedia Apps --------------------------------
+# ---- 5. Creative & Multimedia Apps --------------------------------
 RUN apt-get update && \
     apt-get install -y \
     blender gimp audacity vlc filezilla && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# ---- 4. Google Chrome Install -------------------------------------
+# ---- 6. Google Chrome Install -------------------------------------
 RUN wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \
     apt-get update && \
     (apt-get install -y ./google-chrome-stable_current_amd64.deb || apt-get install -fy) && \
@@ -47,7 +57,7 @@ RUN wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd6
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# ---- 5. Discord Install -------------------------------------------
+# ---- 7. Discord Install -------------------------------------------
 RUN wget -q -O discord.deb "https://discord.com/api/download?platform=linux&format=deb" && \
     apt-get update && \
     (apt-get install -y ./discord.deb || apt-get install -fy) && \
@@ -55,7 +65,7 @@ RUN wget -q -O discord.deb "https://discord.com/api/download?platform=linux&form
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# ---- 6. VS Code Install -------------------------------------------
+# ---- 8. VS Code Install -------------------------------------------
 RUN wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > /etc/apt/trusted.gpg.d/packages.microsoft.gpg && \
     echo "deb [arch=amd64,arm64,armhf signed-by=/etc/apt/trusted.gpg.d/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list && \
     apt-get update && \
