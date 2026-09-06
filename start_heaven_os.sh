@@ -15,20 +15,14 @@ if ! command -v docker &> /dev/null; then
     exit 1
 fi
 
-# ---- STEP 2: Image check - sirf pehli baar build hoga! ------------
-if docker image inspect heaven-os &>/dev/null; then
-    echo "[✓] HeavenOS image already hai — seedha launch ho raha hai!"
-else
-    echo "[!] Pehli baar hai — image build ho rahi hai (5-10 min)..."
-    echo "    (Agli baar seedha launch hoga!)"
-    echo ""
-    docker build -t heaven-os .
-    if [ $? -ne 0 ]; then
-        echo "ERROR: Build fail! Check karo Dockerfile."
-        exit 1
-    fi
-    echo "[✓] Image build ho gayi!"
+# ---- STEP 2: Build Image -------------------------------------------
+echo "[→] Building / Updating HeavenOS Docker image..."
+docker build -t heaven-os .
+if [ $? -ne 0 ]; then
+    echo "ERROR: Build fail! Check karo Dockerfile."
+    exit 1
 fi
+echo "[✓] Image ready!"
 
 echo ""
 
