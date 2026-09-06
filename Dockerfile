@@ -1,13 +1,13 @@
 # ====================================================================
 #  HeavenOS - Based on Ubuntu XFCE (LinuxServer Webtop)
-#  v5.1 - Fixed apt package names (gnupg) & noninteractive env
+#  v5.2 - Enabled Universe/Multiverse repos + Robust APT installation
 # ====================================================================
 
 FROM lscr.io/linuxserver/webtop:ubuntu-xfce
 
 LABEL maintainer="HeavenOS"
 LABEL description="HeavenOS - Ubuntu XFCE Base with Full Application Suite"
-LABEL version="5.1"
+LABEL version="5.2"
 
 ENV PUID=1000
 ENV PGID=1000
@@ -17,16 +17,28 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 EXPOSE 3000
 
-# ---- 1. Base Apps & Developer Tools (Ubuntu APT) ------------------
-# Note: Ubuntu package name for GPG is 'gnupg' (not 'gpg')
+# ---- 1. Enable Universe & Multiverse Repositories ----------------
 RUN apt-get update && \
-    apt-get install -y \
-    curl wget gnupg git python3 python3-pip nodejs npm \
+    apt-get install -y --no-install-recommends \
+    software-properties-common ca-certificates curl wget gnupg git && \
+    add-apt-repository -y universe && \
+    add-apt-repository -y multiverse && \
+    apt-get update
+
+# ---- 2. Developer Tools (Python3 & Node.js) ----------------------
+RUN apt-get install -y --no-install-recommends \
+    python3 python3-pip nodejs npm && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# ---- 3. Creative & Multimedia Apps --------------------------------
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
     blender gimp audacity vlc filezilla && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# ---- 2. Google Chrome Install -------------------------------------
+# ---- 4. Google Chrome Install -------------------------------------
 RUN wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \
     apt-get update && \
     (apt-get install -y ./google-chrome-stable_current_amd64.deb || apt-get install -fy) && \
@@ -34,7 +46,7 @@ RUN wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd6
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# ---- 3. Discord Install -------------------------------------------
+# ---- 5. Discord Install -------------------------------------------
 RUN wget -q -O discord.deb "https://discord.com/api/download?platform=linux&format=deb" && \
     apt-get update && \
     (apt-get install -y ./discord.deb || apt-get install -fy) && \
@@ -42,7 +54,7 @@ RUN wget -q -O discord.deb "https://discord.com/api/download?platform=linux&form
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# ---- 4. VS Code Install -------------------------------------------
+# ---- 6. VS Code Install -------------------------------------------
 RUN wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > /etc/apt/trusted.gpg.d/packages.microsoft.gpg && \
     echo "deb [arch=amd64,arm64,armhf signed-by=/etc/apt/trusted.gpg.d/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list && \
     apt-get update && \
