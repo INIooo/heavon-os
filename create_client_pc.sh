@@ -94,7 +94,7 @@ case "$ACTION" in
         echo "======================================================================"
         curl -L --output cloudflared https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 2>/dev/null
         chmod +x cloudflared
-        ./cloudflared tunnel --url "http://localhost:${HOST_PORT}"
+        ./cloudflared tunnel --protocol http2 --url "http://127.0.0.1:${HOST_PORT}"
         ;;
 
     create)
