@@ -33,6 +33,21 @@ EOF
 #  DESKTOP ICONS
 # ====================================================================
 
+# ---- Blender Desktop Icon -----------------------------------------
+cat > "$DESKTOP_DIR/Blender.desktop" << 'EOF'
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Blender
+Comment=3D Creation Suite
+Exec=blender
+Icon=blender
+Terminal=false
+Categories=Graphics;3DGraphics;
+StartupNotify=true
+EOF
+chmod +x "$DESKTOP_DIR/Blender.desktop"
+
 # ---- File Manager Desktop Icon ------------------------------------
 cat > "$DESKTOP_DIR/Files.desktop" << 'EOF'
 [Desktop Entry]

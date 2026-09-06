@@ -16,9 +16,14 @@ ENV TITLE=HeavenOS
 
 EXPOSE 3000
 
+# ---- APPS Install (Ubuntu APT) -----------------------------------
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y blender && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
 # ---- Lotus wallpaper copy karo -----------------------------------
 COPY Lotus-Wallpaper-Upscaled16x.png /lotus-wallpaper.png
-
 
 # ---- Sirf FILES delete karo, XFCE folders intact rakho -----------
 RUN find /usr/share/backgrounds -type f -delete 2>/dev/null || true
