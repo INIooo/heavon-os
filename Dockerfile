@@ -1,57 +1,41 @@
 # ====================================================================
 #  HeavenOS - Based on Arch Linux XFCE (LinuxServer Webtop)
-#  Same image as described in: how to start up.txt
+#  Lotus wallpaper PERMANENTLY LOCKED - koi change nahi kar sakta
 # ====================================================================
 
 FROM lscr.io/linuxserver/webtop:arch-xfce
 
-# ---- Labels --------------------------------------------------------
 LABEL maintainer="HeavenOS"
-LABEL description="HeavenOS - Arch Linux XFCE Desktop (Webtop)"
-LABEL version="1.0"
+LABEL description="HeavenOS - Arch Linux XFCE Desktop (Lotus Wallpaper Locked)"
+LABEL version="1.1"
 
-# ---- Environment Variables -----------------------------------------
 ENV PUID=1000
 ENV PGID=1000
 ENV TZ=Asia/Kolkata
 ENV TITLE=HeavenOS
 
-# ---- Default Port --------------------------------------------------
 EXPOSE 3000
 
-# ---- Wallpaper - PERMANENT SET ------------------------------------
-# 1. Lotus wallpaper ko default location pe copy karo
-COPY Lotus-Wallpaper-Upscaled16x.png /defaults/bg.png
+# ---- Lotus wallpaper root pe rakhte hain (permanent location) -----
+COPY Lotus-Wallpaper-Upscaled16x.png /lotus-wallpaper.png
 
-# 2. Same wallpaper ko /usr/share me bhi rakhte hain (fallback)
-COPY Lotus-Wallpaper-Upscaled16x.png /usr/share/backgrounds/heaven-lotus.png
+# ---- Saare system wallpapers ko Lotus se replace karo -------------
+# Wallpaper picker kholne pe sirf Lotus hi dikhega!
+RUN cp /lotus-wallpaper.png /defaults/bg.png && \
+    mkdir -p /usr/share/backgrounds/xfce && \
+    cp /lotus-wallpaper.png /usr/share/backgrounds/xfce/xfce-verticals.png && \
+    # Har wallpaper file ko Lotus se replace karo
+    find /usr/share/backgrounds -type f \( -name "*.png" -o -name "*.jpg" \) \
+      -exec cp /lotus-wallpaper.png {} \; 2>/dev/null || true
 
-# 3. XFCE wallpaper config permanently set karo
-#    xfce4-desktop channel me image-path set ho rahi hai
-RUN mkdir -p /defaults/.config/xfce4/xfconf/xfce-perchannel-xml && \
-    cat > /defaults/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml << 'XFCE_CONFIG_EOF'
-<?xml version="1.0" encoding="UTF-8"?>
-<channel name="xfce4-desktop" version="1.0">
-  <property name="backdrop" type="empty">
-    <property name="screen0" type="empty">
-      <property name="monitorVNC-0" type="empty">
-        <property name="workspace0" type="empty">
-          <property name="color-style" type="int" value="0"/>
-          <property name="image-style" type="int" value="5"/>
-          <property name="last-image" type="string" value="/usr/share/backgrounds/heaven-lotus.png"/>
-        </property>
-      </property>
-      <property name="monitor0" type="empty">
-        <property name="workspace0" type="empty">
-          <property name="color-style" type="int" value="0"/>
-          <property name="image-style" type="int" value="5"/>
-          <property name="last-image" type="string" value="/usr/share/backgrounds/heaven-lotus.png"/>
-        </property>
-      </property>
-    </property>
-  </property>
-</channel>
-XFCE_CONFIG_EOF
+# ---- Custom startup script register karo -------------------------
+# LinuxServer containers /custom-cont-init.d/ se scripts chalate hain
+COPY set-wallpaper.sh /custom-cont-init.d/99-heaven-wallpaper.sh
+RUN chmod +x /custom-cont-init.d/99-heaven-wallpaper.sh
+
+# ---- XFCE Desktop Settings plugin hatao (right-click se change na ho sake) ---
+# Agar koi chahta bhi hai toh GUI se wallpaper settings nahi milegi
+RUN pacman -R --noconfirm xfce4-desktop 2>/dev/null || \
+    pacman -Rdd --noconfirm xfdesktop 2>/dev/null || true
 
 # ---- Entry Point (inherited from base image) ----------------------
-# Base image ka entrypoint use hoga (LinuxServer s6-overlay)
