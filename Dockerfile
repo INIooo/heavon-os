@@ -6,8 +6,8 @@
 FROM lscr.io/linuxserver/webtop:arch-xfce
 
 LABEL maintainer="HeavenOS"
-LABEL description="HeavenOS - Arch Linux XFCE (Lotus Wallpaper - Autostart Fix)"
-LABEL version="1.5"
+LABEL description="HeavenOS - Arch Linux XFCE (Blender + Lotus Wallpaper)"
+LABEL version="1.6"
 
 ENV PUID=1000
 ENV PGID=1000
@@ -18,6 +18,13 @@ EXPOSE 3000
 
 # ---- Lotus wallpaper copy karo -----------------------------------
 COPY Lotus-Wallpaper-Upscaled16x.png /lotus-wallpaper.png
+
+# ---- APPS Install karo -------------------------------------------
+# Blender - Latest version (Arch rolling release)
+RUN pacman -Syu --noconfirm && \
+    pacman -S --noconfirm blender && \
+    pacman -Scc --noconfirm
+
 
 # ---- Sirf FILES delete karo, XFCE folders intact rakho -----------
 RUN find /usr/share/backgrounds -type f -delete 2>/dev/null || true
