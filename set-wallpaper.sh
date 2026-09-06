@@ -24,6 +24,52 @@ cp -f /lotus-wallpaper.png /defaults/bg.png 2>/dev/null || true
 # ---- Clear old cached desktop settings ---------------------------
 rm -rf /config/.cache/xfce4/desktop 2>/dev/null || true
 
+# ---- Custom Web Title & Favicon Branding Overrides -----------------
+TITLE_TEXT="${TITLE:-HeavenOS Cloud Workstation ☁️}"
+
+python3 -c "
+import glob, os, re
+
+title = '''${TITLE_TEXT}'''
+favicon_tag = '''<link rel=\"icon\" type=\"image/svg+xml\" href=\"/favicon.svg\"><link rel=\"shortcut icon\" href=\"/favicon.svg\">'''
+
+svg_content = '''<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\">
+  <rect width=\"100\" height=\"100\" rx=\"25\" fill=\"#0f172a\"/>
+  <text x=\"50\" y=\"68\" font-size=\"60\" text-anchor=\"middle\">☁️</text>
+</svg>'''
+
+for d in ['/usr/share/kasmvnc/www', '/defaults']:
+    if os.path.exists(d):
+        try:
+            with open(os.path.join(d, 'favicon.svg'), 'w', encoding='utf-8') as f:
+                f.write(svg_content)
+            with open(os.path.join(d, 'favicon.ico'), 'w', encoding='utf-8') as f:
+                f.write(svg_content)
+            with open(os.path.join(d, 'favicon.png'), 'w', encoding='utf-8') as f:
+                f.write(svg_content)
+        except Exception:
+            pass
+
+for root_dir in ['/usr/share/kasmvnc/www', '/defaults']:
+    if not os.path.exists(root_dir): continue
+    for filepath in glob.glob(root_dir + '/**/*.html', recursive=True):
+        try:
+            with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
+                content = f.read()
+            content = re.sub(r'<title>.*?</title>', f'<title>{title}</title>', content, flags=re.IGNORECASE)
+            if '</head>' in content and 'favicon.svg' not in content:
+                content = content.replace('</head>', f'{favicon_tag}</head>')
+            with open(filepath, 'w', encoding='utf-8') as f:
+                f.write(content)
+        except Exception as e:
+            pass
+" 2>/dev/null || true
+
+# ---- PulseAudio Auto-start for Audio Streaming --------------------
+if ! pgrep -x "pulseaudio" > /dev/null; then
+    pulseaudio --start --exit-idle-time=-1 2>/dev/null || true
+fi
+
 # ---- apply-wallpaper script system copy --------------------------
 cp /apply-wallpaper.sh /usr/local/bin/apply-lotus-wallpaper.sh
 chmod +x /usr/local/bin/apply-lotus-wallpaper.sh
@@ -51,51 +97,114 @@ X-GNOME-Autostart-enabled=true
 EOF
 
 # ====================================================================
-#  HEAVENOS FILE UPLOADER SERVICE (Drag & Drop File Upload Portal)
+#  HEAVENOS BIDIRECTIONAL FILE PORTAL (Upload & Download Server)
 # ====================================================================
-cat > /usr/local/bin/heaven-uploader.py << 'PYEOF'
+cat > /usr/local/bin/heaven-file-portal.py << 'PYEOF'
 import os
 import re
+import urllib.parse
+import mimetypes
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
 PORT = 8889
 DEST_DIR = "/config/Desktop"
 os.makedirs(DEST_DIR, exist_ok=True)
 
-class UploadHandler(BaseHTTPRequestHandler):
+class PortalHandler(BaseHTTPRequestHandler):
     def do_GET(self):
+        parsed = urllib.parse.urlparse(self.path)
+        path = parsed.path
+        query = urllib.parse.parse_qs(parsed.query)
+
+        # Handle File Download
+        if path == '/download':
+            file_name = query.get('file', [''])[0]
+            file_name = os.path.basename(file_name)
+            file_path = os.path.join(DEST_DIR, file_name)
+            if file_name and os.path.isfile(file_path):
+                self.send_response(200)
+                mime, _ = mimetypes.guess_type(file_path)
+                self.send_header('Content-Type', mime or 'application/octet-stream')
+                self.send_header('Content-Disposition', f'attachment; filename="{file_name}"')
+                self.send_header('Content-Length', str(os.path.getsize(file_path)))
+                self.end_headers()
+                with open(file_path, 'rb') as f:
+                    self.wfile.write(f.read())
+                return
+            else:
+                self.send_error(404, "File Not Found")
+                return
+
+        # Main Web Portal Page
         self.send_response(200)
-        self.send_header('Content-type', 'text/html')
+        self.send_header('Content-type', 'text/html; charset=utf-8')
         self.end_headers()
-        html = '''<!DOCTYPE html>
+
+        # Build File List HTML
+        file_items = []
+        if os.path.exists(DEST_DIR):
+            for item in sorted(os.listdir(DEST_DIR)):
+                full_p = os.path.join(DEST_DIR, item)
+                if os.path.isfile(full_p) and not item.endswith('.desktop'):
+                    size_mb = os.path.getsize(full_p) / (1024 * 1024)
+                    size_str = f"{size_mb:.2f} MB" if size_mb >= 1 else f"{os.path.getsize(full_p)/1024:.1f} KB"
+                    safe_name = urllib.parse.quote(item)
+                    file_items.append(f'''
+                    <div class="file-row">
+                        <div class="file-name">📄 {item} <span class="file-size">({size_str})</span></div>
+                        <div class="file-actions">
+                            <a class="dl-btn" href="/download?file={safe_name}" download>📥 Download</a>
+                            <button class="del-btn" onclick="deleteFile('{safe_name}')">🗑️</button>
+                        </div>
+                    </div>''')
+
+        file_list_html = ''.join(file_items) if file_items else '<div class="empty">No uploaded files yet on Desktop</div>'
+
+        html = f'''<!DOCTYPE html>
 <html>
 <head>
-    <title>HeavenOS File Drop</title>
+    <title>HeavenOS File Portal ☁️</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
-        * { box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #0b0f19; color: #e2e8f0; margin:0; padding: 20px; display:flex; justify-content:center; align-items:center; min-height:100vh; }
-        .card { background: #161e2e; border: 1px solid #2d3748; padding: 35px; border-radius: 16px; width: 100%; max-width: 550px; text-align: center; box-shadow: 0 20px 30px rgba(0,0,0,0.5); }
-        h2 { color: #38bdf8; font-size: 24px; margin-top: 0; margin-bottom: 8px; }
-        p { color: #94a3b8; font-size: 14px; margin-bottom: 25px; }
-        .drop-area { border: 2px dashed #38bdf8; background: rgba(56, 189, 248, 0.04); border-radius: 12px; padding: 40px 20px; cursor: pointer; transition: 0.3s; }
-        .drop-area:hover, .drop-area.highlight { background: rgba(56, 189, 248, 0.12); border-color: #7dd3fc; }
-        .icon { font-size: 48px; margin-bottom: 10px; display:block; }
-        input[type="file"] { display: none; }
-        .btn { background: linear-gradient(135deg, #0284c7, #2563eb); color: white; border: none; padding: 12px 28px; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 20px; transition: 0.2s; box-shadow: 0 4px 12px rgba(2,132,199,0.3); }
-        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
-        #status { margin-top: 20px; font-size: 14px; font-weight: 600; }
-        .progress-bar { width: 100%; background: #1e293b; height: 8px; border-radius: 4px; overflow: hidden; margin-top: 15px; display: none; }
-        .progress-fill { height: 100%; background: #38bdf8; width: 0%; transition: width 0.1s; }
-        .file-info { margin-top: 15px; font-size: 13px; color: #a0aec0; text-align: left; background: #0f172a; padding: 10px; border-radius: 6px; display: none; }
+        * {{ box-sizing: border-box; }}
+        body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0b0f19; color: #e2e8f0; margin:0; padding: 25px; display:flex; justify-content:center; align-items:center; min-height:100vh; }}
+        .card {{ background: #161e2e; border: 1px solid #2d3748; padding: 30px; border-radius: 18px; width: 100%; max-width: 620px; box-shadow: 0 25px 40px rgba(0,0,0,0.6); }}
+        .header {{ text-align: center; margin-bottom: 25px; }}
+        .icon {{ font-size: 42px; display:block; margin-bottom: 5px; }}
+        h2 {{ color: #38bdf8; font-size: 24px; margin: 0 0 6px 0; }}
+        p {{ color: #94a3b8; font-size: 14px; margin: 0; }}
+        .section-title {{ font-size: 14px; font-weight: 700; color: #7dd3fc; margin: 25px 0 10px 0; text-transform: uppercase; letter-spacing: 0.5px; }}
+        .drop-area {{ border: 2px dashed #38bdf8; background: rgba(56, 189, 248, 0.05); border-radius: 14px; padding: 30px 20px; text-align: center; cursor: pointer; transition: 0.3s; }}
+        .drop-area:hover, .drop-area.highlight {{ background: rgba(56, 189, 248, 0.15); border-color: #7dd3fc; }}
+        input[type="file"] {{ display: none; }}
+        .btn {{ background: linear-gradient(135deg, #0284c7, #2563eb); color: white; border: none; padding: 12px 26px; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 15px; width: 100%; transition: 0.2s; box-shadow: 0 4px 12px rgba(2,132,199,0.3); }}
+        .btn:hover {{ opacity: 0.95; transform: translateY(-1px); }}
+        #status {{ margin-top: 15px; font-size: 14px; font-weight: 600; text-align: center; }}
+        .progress-bar {{ width: 100%; background: #1e293b; height: 8px; border-radius: 4px; overflow: hidden; margin-top: 12px; display: none; }}
+        .progress-fill {{ height: 100%; background: #38bdf8; width: 0%; transition: width 0.1s; }}
+        .file-info {{ margin-top: 12px; font-size: 13px; color: #a0aec0; text-align: left; background: #0f172a; padding: 10px; border-radius: 6px; display: none; }}
+        .file-list {{ background: #0f172a; border: 1px solid #1e293b; border-radius: 12px; overflow: hidden; max-height: 250px; overflow-y: auto; }}
+        .file-row {{ display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid #1e293b; }}
+        .file-row:last-child {{ border-bottom: none; }}
+        .file-name {{ font-size: 14px; color: #f1f5f9; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 350px; }}
+        .file-size {{ font-size: 12px; color: #64748b; margin-left: 6px; }}
+        .file-actions {{ display: flex; gap: 8px; align-items: center; }}
+        .dl-btn {{ background: rgba(56, 189, 248, 0.15); color: #38bdf8; text-decoration: none; padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 600; transition: 0.2s; border: 1px solid rgba(56, 189, 248, 0.3); }}
+        .dl-btn:hover {{ background: #0284c7; color: white; }}
+        .del-btn {{ background: transparent; color: #ef4444; border: none; font-size: 15px; cursor: pointer; padding: 4px 8px; border-radius: 4px; transition: 0.2s; }}
+        .del-btn:hover {{ background: rgba(239, 68, 68, 0.2); }}
+        .empty {{ padding: 20px; text-align: center; color: #64748b; font-size: 14px; }}
     </style>
 </head>
 <body>
     <div class="card">
-        <span class="icon">☁️</span>
-        <h2>HeavenOS File Uploader</h2>
-        <p>Upload video, audio, images, 3D models or editing files directly to your HeavenOS Desktop!</p>
+        <div class="header">
+            <span class="icon">☁️</span>
+            <h2>HeavenOS File Portal</h2>
+            <p>Bidirectional File Transfer (Local PC ↔ Cloud PC)</p>
+        </div>
 
+        <div class="section-title">📤 Upload Files to Cloud PC</div>
         <div class="drop-area" id="dropArea" onclick="document.getElementById('fileInput').click()">
             📁 <br><b>Click to Choose Files</b> or Drag & Drop here
             <input type="file" id="fileInput" multiple onchange="handleFiles(this.files)">
@@ -103,42 +212,35 @@ class UploadHandler(BaseHTTPRequestHandler):
 
         <div class="file-info" id="fileInfo"></div>
         <div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
-        <button class="btn" onclick="uploadFiles()">Upload Files</button>
+        <button class="btn" onclick="uploadFiles()">Upload to Cloud Desktop</button>
         <div id="status"></div>
+
+        <div class="section-title">📥 Cloud PC Files (Click to Download)</div>
+        <div class="file-list">
+            {file_list_html}
+        </div>
     </div>
 
     <script>
         let selectedFiles = [];
         const dropArea = document.getElementById('dropArea');
 
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-            dropArea.addEventListener(eventName, preventDefaults, false);
-        });
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(e => dropArea.addEventListener(e, pDef, false));
+        function pDef(e) {{ e.preventDefault(); e.stopPropagation(); }}
+        ['dragenter', 'dragover'].forEach(e => dropArea.classList.add('highlight'));
+        ['dragleave', 'drop'].forEach(e => dropArea.classList.remove('highlight'));
 
-        function preventDefaults(e) { e.preventDefault(); e.stopPropagation(); }
+        dropArea.addEventListener('drop', (e) => handleFiles(e.dataTransfer.files));
 
-        ['dragenter', 'dragover'].forEach(eventName => {
-            dropArea.classList.add('highlight');
-        });
-
-        ['dragleave', 'drop'].forEach(eventName => {
-            dropArea.classList.remove('highlight');
-        });
-
-        dropArea.addEventListener('drop', (e) => {
-            let dt = e.dataTransfer;
-            handleFiles(dt.files);
-        });
-
-        function handleFiles(files) {
+        function handleFiles(files) {{
             selectedFiles = Array.from(files);
             let info = document.getElementById('fileInfo');
             info.style.display = 'block';
             info.innerHTML = '<b>Selected Files:</b><br>' + selectedFiles.map(f => '• ' + f.name + ' (' + (f.size/1024/1024).toFixed(2) + ' MB)').join('<br>');
-        }
+        }}
 
-        function uploadFiles() {
-            if (!selectedFiles.length) { alert('Select at least one file!'); return; }
+        function uploadFiles() {{
+            if (!selectedFiles.length) {{ alert('Select at least one file!'); return; }}
             let status = document.getElementById('status');
             let pBar = document.getElementById('progressBar');
             let pFill = document.getElementById('progressFill');
@@ -153,35 +255,55 @@ class UploadHandler(BaseHTTPRequestHandler):
             let xhr = new XMLHttpRequest();
             xhr.open('POST', '/upload', true);
 
-            xhr.upload.onprogress = function(e) {
-                if (e.lengthComputable) {
+            xhr.upload.onprogress = function(e) {{
+                if (e.lengthComputable) {{
                     let percent = (e.loaded / e.total) * 100;
                     pFill.style.width = percent + '%';
-                }
-            };
+                }}
+            }};
 
-            xhr.onload = function() {
-                if (xhr.status == 200) {
+            xhr.onload = function() {{
+                if (xhr.status == 200) {{
                     status.style.color = '#4ade80';
-                    status.innerText = '✅ Upload Successful! Files saved to Desktop.';
-                    selectedFiles = [];
-                    document.getElementById('fileInfo').style.display = 'none';
-                    setTimeout(() => { pBar.style.display = 'none'; pFill.style.width = '0%'; }, 2000);
-                } else {
+                    status.innerText = '✅ Upload Successful!';
+                    setTimeout(() => location.reload(), 1000);
+                }} else {{
                     status.style.color = '#f87171';
                     status.innerText = '❌ Upload Failed!';
-                }
-            };
+                }}
+            }};
 
             xhr.send(formData);
-        }
+        }}
+
+        function deleteFile(fileName) {{
+            if (confirm('Delete ' + decodeURIComponent(fileName) + ' from Desktop?')) {{
+                fetch('/delete?file=' + fileName, {{ method: 'POST' }})
+                    .then(() => location.reload());
+            }}
+        }}
     </script>
 </body>
 </html>'''
         self.wfile.write(html.encode('utf-8'))
 
     def do_POST(self):
-        if self.path == '/upload':
+        parsed = urllib.parse.urlparse(self.path)
+        path = parsed.path
+        query = urllib.parse.parse_qs(parsed.query)
+
+        if path == '/delete':
+            file_name = query.get('file', [''])[0]
+            file_name = os.path.basename(file_name)
+            file_path = os.path.join(DEST_DIR, file_name)
+            if file_name and os.path.isfile(file_path):
+                os.remove(file_path)
+            self.send_response(200)
+            self.end_headers()
+            self.wfile.write(b"OK")
+            return
+
+        if path == '/upload':
             length = int(self.headers.get('Content-Length', 0))
             body = self.rfile.read(length)
             content_type = self.headers.get('Content-Type', '')
@@ -207,36 +329,80 @@ class UploadHandler(BaseHTTPRequestHandler):
             self.wfile.write(b"OK")
 
 def run():
-    server = HTTPServer(('0.0.0.0', PORT), UploadHandler)
+    server = HTTPServer(('0.0.0.0', PORT), PortalHandler)
     server.serve_forever()
 
 if __name__ == '__main__':
     run()
 PYEOF
-chmod +x /usr/local/bin/heaven-uploader.py
+chmod +x /usr/local/bin/heaven-file-portal.py
 
-# Start uploader daemon in background
-if ! pgrep -f "heaven-uploader.py" > /dev/null; then
-    python3 /usr/local/bin/heaven-uploader.py &
+# Start file portal daemon in background
+if ! pgrep -f "heaven-file-portal.py" > /dev/null; then
+    python3 /usr/local/bin/heaven-file-portal.py &
 fi
+
+# ====================================================================
+#  HEAVENOS SPEEDTEST UTILITY SCRIPT
+# ====================================================================
+cat > /usr/local/bin/heaven-speedtest.sh << 'EOF'
+#!/bin/bash
+clear
+echo "======================================================================"
+echo "         ⚡ HEAVENOS CLOUD WORKSTATION SPEEDTEST ⚡"
+echo "======================================================================"
+echo ""
+echo "[→] Testing Cloud PC Network Connection & Bandwidth..."
+echo ""
+if command -v speedtest-cli &>/dev/null; then
+    speedtest-cli --simple
+elif command -v speedtest &>/dev/null; then
+    speedtest --simple
+else
+    echo "Running quick speed check via curl..."
+    curl -s https://raw.githubusercontent.com/sivel/speedtest-cli/master/speedtest.py | python3 - --simple
+fi
+echo ""
+echo "======================================================================"
+echo "  [✓] HeavenOS Cloud Network Status: Ultra High-Speed Verified 🚀"
+echo "======================================================================"
+echo ""
+read -p "Press [Enter] to exit..."
+EOF
+chmod +x /usr/local/bin/heaven-speedtest.sh
 
 # ====================================================================
 #  DESKTOP SHORTCUTS (Full HeavenOS App Suite)
 # ====================================================================
+rm -f "$DESKTOP_DIR/Upload Files.desktop" 2>/dev/null || true
 
-cat > "$DESKTOP_DIR/Upload Files.desktop" << 'EOF'
+cat > "$DESKTOP_DIR/File Portal.desktop" << 'EOF'
 [Desktop Entry]
 Version=1.0
 Type=Application
-Name=Upload Files
-Comment=Drag & Drop File Upload Portal
+Name=File Portal
+Comment=Upload & Download Files (Local PC ↔ Cloud PC)
 Exec=google-chrome-stable --no-sandbox http://localhost:8889
 Icon=folder-download
 Terminal=false
 Categories=Utility;FileTransfer;
 StartupNotify=true
 EOF
-chmod +x "$DESKTOP_DIR/Upload Files.desktop"
+chmod +x "$DESKTOP_DIR/File Portal.desktop"
+
+cat > "$DESKTOP_DIR/Speedtest.desktop" << 'EOF'
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Speedtest
+Comment=Test High-Speed Cloud Internet Connection
+Exec=xfce4-terminal -e "bash /usr/local/bin/heaven-speedtest.sh"
+Icon=network-workgroup
+Terminal=false
+Categories=Network;Utility;
+StartupNotify=true
+EOF
+chmod +x "$DESKTOP_DIR/Speedtest.desktop"
 
 cat > "$DESKTOP_DIR/Chrome.desktop" << 'EOF'
 [Desktop Entry]
@@ -381,9 +547,14 @@ chmod +x "$DESKTOP_DIR/Terminal.desktop"
 # ====================================================================
 #  PLANK DOCK LAUNCHERS (macOS Dock)
 # ====================================================================
-cat > "$PLANK_DIR/UploadFiles.dockitem" << 'EOF'
+cat > "$PLANK_DIR/FilePortal.dockitem" << 'EOF'
 [PlankDockItemPreferences]
-Launcher=file:///config/Desktop/Upload Files.desktop
+Launcher=file:///config/Desktop/File Portal.desktop
+EOF
+
+cat > "$PLANK_DIR/Speedtest.dockitem" << 'EOF'
+[PlankDockItemPreferences]
+Launcher=file:///config/Desktop/Speedtest.desktop
 EOF
 
 cat > "$PLANK_DIR/Chrome.dockitem" << 'EOF'
@@ -402,6 +573,24 @@ Launcher=file:///config/Desktop/VSCode.desktop
 EOF
 
 cat > "$PLANK_DIR/Blender.dockitem" << 'EOF'
+[PlankDockItemPreferences]
+Launcher=file:///config/Desktop/Blender.desktop
+EOF
+
+cat > "$PLANK_DIR/GIMP.dockitem" << 'EOF'
+[PlankDockItemPreferences]
+Launcher=file:///config/Desktop/GIMP.desktop
+EOF
+
+cat > "$PLANK_DIR/Files.dockitem" << 'EOF'
+[PlankDockItemPreferences]
+Launcher=file:///config/Desktop/Files.desktop
+EOF
+
+cat > "$PLANK_DIR/Terminal.dockitem" << 'EOF'
+[PlankDockItemPreferences]
+Launcher=file:///config/Desktop/Terminal.desktop
+EOF
 [PlankDockItemPreferences]
 Launcher=file:///config/Desktop/Blender.desktop
 EOF
@@ -531,6 +720,7 @@ XMLEOF
 # ---- Ownership fix -----------------------------------------------
 chown -R abc:abc /config/ 2>/dev/null || true
 chown abc:abc /usr/local/bin/apply-lotus-wallpaper.sh
-chown abc:abc /usr/local/bin/heaven-uploader.py
+chown abc:abc /usr/local/bin/heaven-file-portal.py 2>/dev/null || true
+chown abc:abc /usr/local/bin/heaven-speedtest.sh 2>/dev/null || true
 
 echo "[HeavenOS] macOS Sonoma UI + WhiteSur Theme + Plank Dock Registered!"

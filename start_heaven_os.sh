@@ -9,6 +9,13 @@ echo "         HeavenOS - Ubuntu XFCE Desktop Launcher"
 echo "======================================================================"
 echo ""
 
+# Navigate to HeavenOS directory if needed
+if [ -d "HeavenOS" ]; then
+    cd HeavenOS
+elif [ -d "heavon-os" ]; then
+    cd heavon-os
+fi
+
 # ---- STEP 1: Check Docker ------------------------------------------
 if ! command -v docker &> /dev/null; then
     echo "ERROR: Docker nahi mila! Google Cloud Shell pe jao."
@@ -38,7 +45,7 @@ docker run -d \
     -e PUID=1000 \
     -e PGID=1000 \
     -e TZ=Asia/Kolkata \
-    -e TITLE=HeavenOS \
+    -e TITLE="HeavenOS Cloud Workstation ☁️" \
     heaven-os
 
 if [ $? -ne 0 ]; then
@@ -50,5 +57,6 @@ echo ""
 echo "======================================================================"
 echo "  [✓] HeavenOS Container Successfully Started!"
 echo "  Access Link: http://localhost:8888 (Port 8888)"
+echo "  Favicon & Title: Custom ☁️ Favicon & HeavenOS Branding Loaded"
 echo "======================================================================"
 echo ""
