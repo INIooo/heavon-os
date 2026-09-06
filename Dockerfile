@@ -1,13 +1,13 @@
 # ====================================================================
 #  HeavenOS - Based on Arch Linux XFCE (LinuxServer Webtop)
-#  Lotus wallpaper PERMANENTLY LOCKED - koi change nahi kar sakta
+#  Lotus wallpaper ONLY - Baaki sab DELETE
 # ====================================================================
 
 FROM lscr.io/linuxserver/webtop:arch-xfce
 
 LABEL maintainer="HeavenOS"
-LABEL description="HeavenOS - Arch Linux XFCE Desktop (Lotus Wallpaper Locked)"
-LABEL version="1.2"
+LABEL description="HeavenOS - Arch Linux XFCE (Lotus Only)"
+LABEL version="1.3"
 
 ENV PUID=1000
 ENV PGID=1000
@@ -16,16 +16,21 @@ ENV TITLE=HeavenOS
 
 EXPOSE 3000
 
-# ---- Lotus wallpaper root pe rakhte hain (permanent location) -----
+# ---- Lotus wallpaper copy karo -----------------------------------
 COPY Lotus-Wallpaper-Upscaled16x.png /lotus-wallpaper.png
 
-# ---- Saare system wallpapers ko Lotus se replace karo -------------
-RUN cp /lotus-wallpaper.png /defaults/bg.png && \
-    mkdir -p /usr/share/backgrounds/xfce && \
-    find /usr/share/backgrounds -type f \( -name "*.png" -o -name "*.jpg" \) \
-      -exec cp /lotus-wallpaper.png {} \; 2>/dev/null || true
+# ---- NUCLEAR: Saare other wallpapers DELETE karo -----------------
+# Sirf Lotus bachega, koi aur option hi nahi hoga picker mein!
+RUN find /usr/share/backgrounds -type f -delete 2>/dev/null || true && \
+    find /usr/share/xfce4/backdrops -type f -delete 2>/dev/null || true && \
+    rm -rf /usr/share/backgrounds/* 2>/dev/null || true
 
-# ---- Custom startup script register karo -------------------------
+# ---- Sirf Lotus wali folder banana -------------------------------
+RUN mkdir -p /usr/share/backgrounds/HeavenOS && \
+    cp /lotus-wallpaper.png /usr/share/backgrounds/HeavenOS/lotus.png && \
+    cp /lotus-wallpaper.png /defaults/bg.png
+
+# ---- Custom startup script ---------------------------------------
 COPY set-wallpaper.sh /custom-cont-init.d/99-heaven-wallpaper.sh
 RUN chmod +x /custom-cont-init.d/99-heaven-wallpaper.sh
 
