@@ -1,13 +1,13 @@
 # ====================================================================
 #  HeavenOS - Based on Ubuntu XFCE (LinuxServer Webtop)
-#  v5.2 - Enabled Universe/Multiverse repos + Robust APT installation
+#  v5.3 - Fixed NodeSource npm conflict & apt dependencies
 # ====================================================================
 
 FROM lscr.io/linuxserver/webtop:ubuntu-xfce
 
 LABEL maintainer="HeavenOS"
 LABEL description="HeavenOS - Ubuntu XFCE Base with Full Application Suite"
-LABEL version="5.2"
+LABEL version="5.3"
 
 ENV PUID=1000
 ENV PGID=1000
@@ -19,21 +19,22 @@ EXPOSE 3000
 
 # ---- 1. Enable Universe & Multiverse Repositories ----------------
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
+    apt-get install -y \
     software-properties-common ca-certificates curl wget gnupg git && \
     add-apt-repository -y universe && \
     add-apt-repository -y multiverse && \
     apt-get update
 
 # ---- 2. Developer Tools (Python3 & Node.js) ----------------------
-RUN apt-get install -y --no-install-recommends \
-    python3 python3-pip nodejs npm && \
+# Note: 'nodejs' package from NodeSource already includes 'npm'
+RUN apt-get install -y \
+    python3 python3-pip python3-venv nodejs && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
 # ---- 3. Creative & Multimedia Apps --------------------------------
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
+    apt-get install -y \
     blender gimp audacity vlc filezilla && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
