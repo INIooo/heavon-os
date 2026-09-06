@@ -1,23 +1,35 @@
 #!/bin/bash
 # ====================================================================
-#  HeavenOS - Force Lotus Wallpaper - NUCLEAR LOCK
-#  Runs on EVERY boot via /custom-cont-init.d/
+#  HeavenOS - cont-init script (runs before desktop starts)
 # ====================================================================
 
 WALLPAPER="/lotus-wallpaper.png"
 CONFIG_DIR="/config/.config/xfce4/xfconf/xfce-perchannel-xml"
-XML_FILE="$CONFIG_DIR/xfce4-desktop.xml"
+AUTOSTART_DIR="/config/.config/autostart"
 
-echo "[HeavenOS] Setting Lotus wallpaper..."
-
-# ---- Step 1: Config folder banana --------------------------------
+# ---- Folders banana -----------------------------------------------
 mkdir -p "$CONFIG_DIR"
+mkdir -p "$AUTOSTART_DIR"
 
-# ---- Step 2: Agar XML pehle se immutable hai toh unlock karo -----
-chattr -i "$XML_FILE" 2>/dev/null || true
+# ---- apply-wallpaper script system mein copy karo -----------------
+cp /apply-wallpaper.sh /usr/local/bin/apply-lotus-wallpaper.sh
+chmod +x /usr/local/bin/apply-lotus-wallpaper.sh
 
-# ---- Step 3: XFCE Desktop XML force karo -------------------------
-cat > "$XML_FILE" << 'XMLEOF'
+# ---- XFCE Autostart entry create karo ----------------------------
+# Ye desktop load hone ke baad automatically chalega
+cat > "$AUTOSTART_DIR/heaven-wallpaper.desktop" << 'EOF'
+[Desktop Entry]
+Type=Application
+Name=HeavenOS Wallpaper
+Exec=bash /usr/local/bin/apply-lotus-wallpaper.sh
+Hidden=false
+NoDisplay=false
+X-GNOME-Autostart-enabled=true
+EOF
+
+# ---- XML config bhi set karo (fallback) --------------------------
+chattr -i "$CONFIG_DIR/xfce4-desktop.xml" 2>/dev/null || true
+cat > "$CONFIG_DIR/xfce4-desktop.xml" << 'XMLEOF'
 <?xml version="1.0" encoding="UTF-8"?>
 <channel name="xfce4-desktop" version="1.0">
   <property name="backdrop" type="empty">
@@ -36,27 +48,13 @@ cat > "$XML_FILE" << 'XMLEOF'
           <property name="last-image" type="string" value="/lotus-wallpaper.png"/>
         </property>
       </property>
-      <property name="monitorHDMI-1" type="empty">
-        <property name="workspace0" type="empty">
-          <property name="color-style" type="int" value="0"/>
-          <property name="image-style" type="int" value="5"/>
-          <property name="last-image" type="string" value="/lotus-wallpaper.png"/>
-        </property>
-      </property>
     </property>
   </property>
 </channel>
 XMLEOF
 
-# ---- Step 4: XML file IMMUTABLE karo (chattr +i) ------------------
-# Ab koi bhi - root bhi - is file ko change nahi kar sakta!
-chown abc:abc "$XML_FILE"
-chattr +i "$XML_FILE"
-
-# ---- Step 5: Ownership fix karo ----------------------------------
+# ---- Ownership fix -----------------------------------------------
 chown -R abc:abc /config/.config/ 2>/dev/null || true
+chown abc:abc /usr/local/bin/apply-lotus-wallpaper.sh
 
-# ---- Step 6: Lotus file bhi lock karo ----------------------------
-chattr +i "$WALLPAPER" 2>/dev/null || true
-
-echo "[HeavenOS] Lotus wallpaper LOCKED with chattr +i! No one can change it."
+echo "[HeavenOS] Autostart wallpaper script registered!"

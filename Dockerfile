@@ -1,13 +1,13 @@
 # ====================================================================
 #  HeavenOS - Based on Arch Linux XFCE (LinuxServer Webtop)
-#  Lotus wallpaper ONLY - Baaki sab DELETE (folder structure intact)
+#  v1.5 - Autostart fix for wallpaper
 # ====================================================================
 
 FROM lscr.io/linuxserver/webtop:arch-xfce
 
 LABEL maintainer="HeavenOS"
-LABEL description="HeavenOS - Arch Linux XFCE (Lotus Only)"
-LABEL version="1.4"
+LABEL description="HeavenOS - Arch Linux XFCE (Lotus Wallpaper - Autostart Fix)"
+LABEL version="1.5"
 
 ENV PUID=1000
 ENV PGID=1000
@@ -19,16 +19,19 @@ EXPOSE 3000
 # ---- Lotus wallpaper copy karo -----------------------------------
 COPY Lotus-Wallpaper-Upscaled16x.png /lotus-wallpaper.png
 
-# ---- Sirf FILES delete karo, FOLDERS mat chhuo! ------------------
-# XFCE ko /usr/share/backgrounds/xfce/ folder chahiye hota hai
+# ---- Sirf FILES delete karo, XFCE folders intact rakho -----------
 RUN find /usr/share/backgrounds -type f -delete 2>/dev/null || true
 
-# ---- XFCE wala folder aur Lotus wahi rakh do --------------------
+# ---- Sirf Lotus wahi rakho (XFCE ka exact folder) ----------------
 RUN mkdir -p /usr/share/backgrounds/xfce && \
     cp /lotus-wallpaper.png /usr/share/backgrounds/xfce/lotus.png && \
     cp /lotus-wallpaper.png /defaults/bg.png
 
-# ---- Custom startup script ---------------------------------------
+# ---- Scripts copy karo -------------------------------------------
+COPY apply-wallpaper.sh /apply-wallpaper.sh
+RUN chmod +x /apply-wallpaper.sh
+
+# ---- cont-init script (desktop se pehle chalta hai) --------------
 COPY set-wallpaper.sh /custom-cont-init.d/99-heaven-wallpaper.sh
 RUN chmod +x /custom-cont-init.d/99-heaven-wallpaper.sh
 
