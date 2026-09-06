@@ -1,7 +1,7 @@
 #!/bin/bash
 # ====================================================================
 #  HeavenOS - cont-init script (runs before desktop starts)
-#  Purges default wallpapers and enforces Lotus Wallpaper permanently
+#  Purges default wallpapers, enforces Lotus Wallpaper & creates shortcuts
 # ====================================================================
 
 WALLPAPER="/usr/share/backgrounds/lotus.png"
@@ -39,10 +39,130 @@ X-GNOME-Autostart-enabled=true
 EOF
 
 # ====================================================================
-#  DESKTOP SHORTCUTS
+#  DESKTOP SHORTCUTS (Full HeavenOS App Suite)
 # ====================================================================
 
-# ---- File Manager Desktop Icon ------------------------------------
+# ---- 1. Google Chrome ---------------------------------------------
+cat > "$DESKTOP_DIR/Chrome.desktop" << 'EOF'
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Google Chrome
+Comment=Web Browser
+Exec=google-chrome-stable --no-sandbox %U
+Icon=google-chrome
+Terminal=false
+Categories=Network;WebBrowser;
+StartupNotify=true
+EOF
+chmod +x "$DESKTOP_DIR/Chrome.desktop"
+
+# ---- 2. Discord --------------------------------------------------
+cat > "$DESKTOP_DIR/Discord.desktop" << 'EOF'
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Discord
+Comment=Chat & Voice
+Exec=discord --no-sandbox
+Icon=discord
+Terminal=false
+Categories=Network;InstantMessaging;
+StartupNotify=true
+EOF
+chmod +x "$DESKTOP_DIR/Discord.desktop"
+
+# ---- 3. VS Code ---------------------------------------------------
+cat > "$DESKTOP_DIR/VSCode.desktop" << 'EOF'
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=VS Code
+Comment=Visual Studio Code
+Exec=code --no-sandbox
+Icon=vscode
+Terminal=false
+Categories=Development;IDE;
+StartupNotify=true
+EOF
+chmod +x "$DESKTOP_DIR/VSCode.desktop"
+
+# ---- 4. Blender ---------------------------------------------------
+cat > "$DESKTOP_DIR/Blender.desktop" << 'EOF'
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Blender
+Comment=3D Creation Suite
+Exec=blender
+Icon=blender
+Terminal=false
+Categories=Graphics;3DGraphics;
+StartupNotify=true
+EOF
+chmod +x "$DESKTOP_DIR/Blender.desktop"
+
+# ---- 5. GIMP ------------------------------------------------------
+cat > "$DESKTOP_DIR/GIMP.desktop" << 'EOF'
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=GIMP
+Comment=Image Editor
+Exec=gimp
+Icon=gimp
+Terminal=false
+Categories=Graphics;2DGraphics;
+StartupNotify=true
+EOF
+chmod +x "$DESKTOP_DIR/GIMP.desktop"
+
+# ---- 6. Audacity --------------------------------------------------
+cat > "$DESKTOP_DIR/Audacity.desktop" << 'EOF'
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Audacity
+Comment=Audio Editor
+Exec=audacity
+Icon=audacity
+Terminal=false
+Categories=AudioVideo;Audio;
+StartupNotify=true
+EOF
+chmod +x "$DESKTOP_DIR/Audacity.desktop"
+
+# ---- 7. VLC Media Player ------------------------------------------
+cat > "$DESKTOP_DIR/VLC.desktop" << 'EOF'
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=VLC Player
+Comment=Media Player
+Exec=vlc
+Icon=vlc
+Terminal=false
+Categories=AudioVideo;Player;
+StartupNotify=true
+EOF
+chmod +x "$DESKTOP_DIR/VLC.desktop"
+
+# ---- 8. FileZilla -------------------------------------------------
+cat > "$DESKTOP_DIR/FileZilla.desktop" << 'EOF'
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=FileZilla
+Comment=FTP Client
+Exec=filezilla
+Icon=filezilla
+Terminal=false
+Categories=Network;FileTransfer;
+StartupNotify=true
+EOF
+chmod +x "$DESKTOP_DIR/FileZilla.desktop"
+
+# ---- 9. File Manager ----------------------------------------------
 cat > "$DESKTOP_DIR/Files.desktop" << 'EOF'
 [Desktop Entry]
 Version=1.0
@@ -57,7 +177,7 @@ StartupNotify=true
 EOF
 chmod +x "$DESKTOP_DIR/Files.desktop"
 
-# ---- Terminal Desktop Icon ----------------------------------------
+# ---- 10. Terminal -------------------------------------------------
 cat > "$DESKTOP_DIR/Terminal.desktop" << 'EOF'
 [Desktop Entry]
 Version=1.0
@@ -111,4 +231,4 @@ XMLEOF
 chown -R abc:abc /config/ 2>/dev/null || true
 chown abc:abc /usr/local/bin/apply-lotus-wallpaper.sh
 
-echo "[HeavenOS] Permanent Lotus Wallpaper Config Registered!"
+echo "[HeavenOS] Full App Suite Desktop Shortcuts + Permanent Lotus Wallpaper Registered!"
