@@ -1,13 +1,13 @@
 # ====================================================================
 #  HeavenOS - Based on Ubuntu XFCE (LinuxServer Webtop)
-#  v6.1 - Fixed WhiteSur GTK install flags (-c dark)
+#  v6.2 - Clean WhiteSur Theme installation (-d /usr/share/themes)
 # ====================================================================
 
 FROM lscr.io/linuxserver/webtop:ubuntu-xfce
 
 LABEL maintainer="HeavenOS"
 LABEL description="HeavenOS - Ubuntu XFCE macOS Sonoma Workstation"
-LABEL version="6.1"
+LABEL version="6.2"
 
 ENV PUID=1000
 ENV PGID=1000
@@ -21,19 +21,21 @@ EXPOSE 3000
 RUN apt-get update && \
     apt-get install -y \
     software-properties-common ca-certificates curl wget gnupg git \
-    gtk2-engines-murrine gtk2-engines-pixbuf sassc optipng bc plank dialog libglib2.0-dev-bin && \
+    gtk2-engines-murrine gtk2-engines-pixbuf sassc optipng bc plank \
+    gsettings-desktop-schemas libglib2.0-bin libglib2.0-dev-bin && \
     add-apt-repository -y universe && \
     add-apt-repository -y multiverse && \
     apt-get update
 
-# ---- 2. Install WhiteSur GTK Theme (macOS Dark) -------------------
-# Note: WhiteSur install.sh expects lowercase '-c dark'
+# ---- 2. Install WhiteSur GTK Theme (macOS Dark & Light) -----------
 RUN git clone --depth 1 https://github.com/vinceliuice/WhiteSur-gtk-theme.git /tmp/WhiteSur-gtk && \
-    /tmp/WhiteSur-gtk/install.sh -c dark --dest /usr/share/themes && \
+    mkdir -p /usr/share/themes && \
+    /tmp/WhiteSur-gtk/install.sh -d /usr/share/themes && \
     rm -rf /tmp/WhiteSur-gtk
 
 # ---- 3. Install WhiteSur Icon Theme (macOS Icons) ----------------
 RUN git clone --depth 1 https://github.com/vinceliuice/WhiteSur-icon-theme.git /tmp/WhiteSur-icons && \
+    mkdir -p /usr/share/icons && \
     /tmp/WhiteSur-icons/install.sh -d /usr/share/icons && \
     rm -rf /tmp/WhiteSur-icons
 
