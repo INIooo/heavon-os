@@ -342,19 +342,47 @@ req = urllib.request.Request(url, data=payload, headers=headers, method='POST')
 download_url = None
 try:
     with urllib.request.urlopen(req) as resp:
-        download_url = resp.read().decode('utf-8').strip('"')
+        raw_resp = resp.read().decode('utf-8').strip()
+        try:
+            parsed = json.loads(raw_resp)
+            if isinstance(parsed, dict):
+                download_url = parsed.get("url") or parsed.get("downloadUrl") or parsed.get("link")
+            elif isinstance(parsed, str):
+                download_url = parsed
+        except Exception:
+            download_url = raw_resp.strip('"')
 except Exception as e:
-    print(f"[HeavenOS] Registration API Note ({e}) - switching to direct mirror...")
+    print(f"[HeavenOS] Registration API Note: {e}")
 
 if not download_url or not download_url.startswith("http"):
-    download_url = "https://sw.blackmagicdesign.com/DaVinciResolve/v18.6.6/DaVinci_Resolve_18.6.6_Linux.zip"
+    print("[HeavenOS] Fetching direct download URL from Blackmagic mirror index...")
+    try:
+        req2 = urllib.request.Request("https://www.blackmagicdesign.com/api/support/us/downloads", headers=headers)
+        with urllib.request.urlopen(req2) as resp2:
+            d2 = json.loads(resp2.read().decode('utf-8'))
+            for item in d2.get('downloads', []):
+                urls = item.get('urls', {})
+                if 'linux' in urls:
+                    for l_item in urls['linux']:
+                        if isinstance(l_item, dict) and 'downloadUrl' in l_item:
+                            download_url = l_item['downloadUrl']
+                            break
+                if download_url:
+                    break
+    except Exception as e2:
+        print(f"[HeavenOS] Secondary mirror query note: {e2}")
+
+if not download_url or not download_url.startswith("http"):
+    print("[HeavenOS] ERROR: Could not obtain DaVinci Resolve download link!")
+    sys.exit(1)
 
 print(f"[HeavenOS] Downloading DaVinci Resolve setup package...")
 zip_path = "/tmp/DaVinci_Resolve.zip"
 if os.path.exists(zip_path):
     os.remove(zip_path)
 
-subprocess.run(["wget", "--progress=bar:force", "-O", zip_path, download_url], check=True)
+subprocess.run(["wget", "--user-agent=Mozilla/5.0", "--progress=bar:force", "-O", zip_path, download_url], check=True)
+
 
 print("[HeavenOS] Unpacking setup files (this may take 1-2 mins)...")
 os.makedirs("/tmp/davinci", exist_ok=True)
