@@ -52,16 +52,19 @@ RUN apt-get install -y \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# ---- 5. Creative & Multimedia Apps & DaVinci Resolve Stack -----
+# ---- 5. Creative & Multimedia Apps & Pro Tools --------------------
 RUN apt-get update && \
     apt-get install -y \
     blender gimp audacity vlc filezilla zenity \
-    ocl-icd-opencl-dev opencl-headers mesa-opencl-icd pocl-opencl-icd \
-    libapr1 libaprutil1 libgl1 libglx-mesa0 libglu1-mesa \
-    libxcb-cursor0 libxcb-xinerama0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-shape0 libxcb-xfixes0 \
-    unzip fakeroot libdbus-1-3 libfontconfig1 libfreetype6 libglib2.0-0 libxkbcommon-x11-0 && \
+    kdenlive krita natron && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
+
+# ---- 5.1 Postman Studio Install -----------------------------------
+RUN wget -q -O /tmp/postman.tar.gz https://dl.pstmn.io/download/latest/linux64 && \
+    tar -xzf /tmp/postman.tar.gz -C /opt/ && \
+    ln -s /opt/Postman/Postman /usr/local/bin/postman && \
+    rm -f /tmp/postman.tar.gz
 
 # ---- 6. Google Chrome Install -------------------------------------
 RUN wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \

@@ -50,6 +50,18 @@ NoDisplay=false
 X-GNOME-Autostart-enabled=true
 EOF
 
+# ---- Startup Notice Autostart (DaVinci Resolve Optimization Note) ----
+cat > "$AUTOSTART_DIR/heaven-notice.desktop" << 'EOF'
+[Desktop Entry]
+Type=Application
+Name=HeavenOS Notice
+Exec=zenity --info --title="HeavenOS" --text="Due to lack of optimisation, we couldn't include the following apps that we promised:\n\n1. DaVinci Resolve" --width=420
+Hidden=false
+NoDisplay=false
+X-GNOME-Autostart-enabled=true
+EOF
+
+
 # ====================================================================
 #  HEAVENOS FILE UPLOADER SERVICE (Drag & Drop File Upload Portal)
 # ====================================================================
@@ -280,100 +292,64 @@ StartupNotify=true
 EOF
 chmod +x "$DESKTOP_DIR/VSCode.desktop"
 
-# ====================================================================
-#  DAVINCI RESOLVE AUTO-INSTALLER & NATIVE APP LAUNCHER SCRIPT
-# ====================================================================
-cat > /usr/local/bin/install-davinci.py << 'PYEOF'
-import os
-import sys
-import subprocess
-
-print("=========================================================")
-print("  HeavenOS - DaVinci Resolve Native App Installer")
-print("=========================================================")
-
-search_dirs = ["/config/Desktop", "/config/Downloads", "/tmp"]
-found_pkg = None
-
-for d in search_dirs:
-    if os.path.exists(d):
-        for f in os.listdir(d):
-            if "DaVinci" in f and (f.endswith(".run") or f.endswith(".zip")):
-                found_pkg = os.path.join(d, f)
-                print(f"[HeavenOS] Found installer package: {found_pkg}")
-                break
-    if found_pkg:
-        break
-
-if found_pkg:
-    print("[HeavenOS] Preparing setup files...")
-    run_file = None
-    if found_pkg.endswith(".zip"):
-        print("[HeavenOS] Extracting ZIP package...")
-        os.makedirs("/tmp/davinci", exist_ok=True)
-        subprocess.run(["unzip", "-o", found_pkg, "-d", "/tmp/davinci"], check=True)
-        for f in os.listdir("/tmp/davinci"):
-            if f.endswith(".run"):
-                run_file = os.path.join("/tmp/davinci", f)
-                break
-    else:
-        run_file = found_pkg
-
-    if run_file and os.path.exists(run_file):
-        os.chmod(run_file, 0o755)
-        print("[HeavenOS] Installing DaVinci Resolve into /opt/resolve...")
-        env = os.environ.copy()
-        env["SKIP_PACKAGE_CHECK"] = "1"
-        subprocess.run([run_file, "-i", "-y"], env=env, check=False)
-        print("=========================================================")
-        print("  DaVinci Resolve Installed Successfully!")
-        print("=========================================================")
-        sys.exit(0)
-
-print("[HeavenOS] No installer package found in Desktop or Downloads.")
-sys.exit(1)
-PYEOF
-chmod +x /usr/local/bin/install-davinci.py
-
-cat > /usr/local/bin/launch-davinci.sh << 'EOF'
-#!/bin/bash
-if [ -f "/opt/resolve/bin/resolve" ]; then
-    export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libglib-2.0.so.0
-    export MESA_GL_VERSION_OVERRIDE=4.5
-    /opt/resolve/bin/resolve "$@"
-else
-    python3 /usr/local/bin/install-davinci.py
-    if [ $? -eq 0 ] && [ -f "/opt/resolve/bin/resolve" ]; then
-        echo "Launching DaVinci Resolve App..."
-        export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libglib-2.0.so.0
-        export MESA_GL_VERSION_OVERRIDE=4.5
-        /opt/resolve/bin/resolve "$@"
-    else
-        zenity --info --title="HeavenOS - DaVinci Resolve Setup" --text="DaVinci Resolve system & OpenCL environment are 100% ready!\n\nTo complete 1-click setup:\n1. Download Linux installer from Blackmagic (Chrome will open).\n2. Once downloaded to Desktop/Downloads, click DaVinci Resolve icon again!\n\nOr drag-and-drop the file via 'Upload Files' portal." --width=450 2>/dev/null
-        google-chrome-stable --no-sandbox "https://www.blackmagicdesign.com/products/davinciresolve" &
-    fi
-fi
-EOF
-chmod +x /usr/local/bin/launch-davinci.sh
-
-
-
-
-cat > "$DESKTOP_DIR/DaVinci Resolve.desktop" << 'EOF'
+cat > "$DESKTOP_DIR/Kdenlive.desktop" << 'EOF'
 [Desktop Entry]
 Version=1.0
 Type=Application
-Name=DaVinci Resolve
-Comment=Professional Video Editing & Color Correction
-Exec=/usr/local/bin/launch-davinci.sh
-Icon=video-display
+Name=Kdenlive
+Comment=Non-Linear Video Editor
+Exec=kdenlive
+Icon=kdenlive
 Terminal=false
 Categories=AudioVideo;Video;VideoEditing;
 StartupNotify=true
 EOF
-chmod +x "$DESKTOP_DIR/DaVinci Resolve.desktop"
+chmod +x "$DESKTOP_DIR/Kdenlive.desktop"
+
+cat > "$DESKTOP_DIR/Krita.desktop" << 'EOF'
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Krita
+Comment=Digital Painting & Illustration
+Exec=krita
+Icon=krita
+Terminal=false
+Categories=Graphics;2DGraphics;RasterGraphics;
+StartupNotify=true
+EOF
+chmod +x "$DESKTOP_DIR/Krita.desktop"
+
+cat > "$DESKTOP_DIR/Natron.desktop" << 'EOF'
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Natron
+Comment=Node-based VFX Compositing Software
+Exec=natron
+Icon=natron
+Terminal=false
+Categories=Graphics;Video;
+StartupNotify=true
+EOF
+chmod +x "$DESKTOP_DIR/Natron.desktop"
+
+cat > "$DESKTOP_DIR/Postman.desktop" << 'EOF'
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Postman
+Comment=API Development & Testing Studio
+Exec=postman
+Icon=postman
+Terminal=false
+Categories=Development;IDE;
+StartupNotify=true
+EOF
+chmod +x "$DESKTOP_DIR/Postman.desktop"
 
 cat > "$DESKTOP_DIR/Blender.desktop" << 'EOF'
+
 [Desktop Entry]
 Version=1.0
 Type=Application
@@ -494,15 +470,31 @@ cat > "$PLANK_DIR/VSCode.dockitem" << 'EOF'
 Launcher=file:///config/Desktop/VSCode.desktop
 EOF
 
-cat > "$PLANK_DIR/DaVinciResolve.dockitem" << 'EOF'
+cat > "$PLANK_DIR/Postman.dockitem" << 'EOF'
 [PlankDockItemPreferences]
-Launcher=file:///config/Desktop/DaVinci Resolve.desktop
+Launcher=file:///config/Desktop/Postman.desktop
+EOF
+
+cat > "$PLANK_DIR/Kdenlive.dockitem" << 'EOF'
+[PlankDockItemPreferences]
+Launcher=file:///config/Desktop/Kdenlive.desktop
+EOF
+
+cat > "$PLANK_DIR/Krita.dockitem" << 'EOF'
+[PlankDockItemPreferences]
+Launcher=file:///config/Desktop/Krita.desktop
+EOF
+
+cat > "$PLANK_DIR/Natron.dockitem" << 'EOF'
+[PlankDockItemPreferences]
+Launcher=file:///config/Desktop/Natron.desktop
 EOF
 
 cat > "$PLANK_DIR/Blender.dockitem" << 'EOF'
 [PlankDockItemPreferences]
 Launcher=file:///config/Desktop/Blender.desktop
 EOF
+
 
 cat > "$PLANK_DIR/GIMP.dockitem" << 'EOF'
 [PlankDockItemPreferences]
@@ -644,7 +636,5 @@ XMLEOF
 chown -R abc:abc /config/ 2>/dev/null || true
 chown abc:abc /usr/local/bin/apply-lotus-wallpaper.sh
 chown abc:abc /usr/local/bin/heaven-uploader.py
-chown abc:abc /usr/local/bin/launch-davinci.sh
-chown abc:abc /usr/local/bin/install-davinci.py
 
 echo "[HeavenOS] macOS Sonoma UI + WhiteSur Theme + Plank Dock Registered!"
