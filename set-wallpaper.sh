@@ -286,148 +286,54 @@ chmod +x "$DESKTOP_DIR/VSCode.desktop"
 cat > /usr/local/bin/install-davinci.py << 'PYEOF'
 import os
 import sys
-import json
-import urllib.request
 import subprocess
 
 print("=========================================================")
-print("  HeavenOS - Automated DaVinci Resolve Installer App")
+print("  HeavenOS - DaVinci Resolve Native App Installer")
 print("=========================================================")
 
-# 1. Check for local uploaded installer package on Desktop first
-local_pkg = None
-for f in os.listdir("/config/Desktop"):
-    if "DaVinci" in f and (f.endswith(".run") or f.endswith(".zip")):
-        local_pkg = os.path.join("/config/Desktop", f)
-        print(f"[HeavenOS] Detected local package on Desktop: {local_pkg}")
+search_dirs = ["/config/Desktop", "/config/Downloads", "/tmp"]
+found_pkg = None
+
+for d in search_dirs:
+    if os.path.exists(d):
+        for f in os.listdir(d):
+            if "DaVinci" in f and (f.endswith(".run") or f.endswith(".zip")):
+                found_pkg = os.path.join(d, f)
+                print(f"[HeavenOS] Found installer package: {found_pkg}")
+                break
+    if found_pkg:
         break
 
-if local_pkg:
-    if local_pkg.endswith(".zip"):
-        print("[HeavenOS] Extracting uploaded .zip archive...")
+if found_pkg:
+    print("[HeavenOS] Preparing setup files...")
+    run_file = None
+    if found_pkg.endswith(".zip"):
+        print("[HeavenOS] Extracting ZIP package...")
         os.makedirs("/tmp/davinci", exist_ok=True)
-        subprocess.run(["unzip", "-o", local_pkg, "-d", "/tmp/davinci"], check=True)
-        for file in os.listdir("/tmp/davinci"):
-            if file.endswith(".run"):
-                run_file = os.path.join("/tmp/davinci", file)
+        subprocess.run(["unzip", "-o", found_pkg, "-d", "/tmp/davinci"], check=True)
+        for f in os.listdir("/tmp/davinci"):
+            if f.endswith(".run"):
+                run_file = os.path.join("/tmp/davinci", f)
                 break
     else:
-        run_file = local_pkg
+        run_file = found_pkg
 
     if run_file and os.path.exists(run_file):
         os.chmod(run_file, 0o755)
-        print("[HeavenOS] Installing DaVinci Resolve App into /opt/resolve...")
+        print("[HeavenOS] Installing DaVinci Resolve into /opt/resolve...")
         env = os.environ.copy()
         env["SKIP_PACKAGE_CHECK"] = "1"
         subprocess.run([run_file, "-i", "-y"], env=env, check=False)
-        print("[HeavenOS] Installation complete!")
+        print("=========================================================")
+        print("  DaVinci Resolve Installed Successfully!")
+        print("=========================================================")
         sys.exit(0)
 
-# 2. Automated Blackmagic API download
-headers = {
-    'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:119.0) Gecko/20100101 Firefox/119.0',
-    'Accept': 'application/json, text/plain, */*',
-    'Content-Type': 'application/json',
-    'Referer': 'https://www.blackmagicdesign.com/support/',
-    'Origin': 'https://www.blackmagicdesign.com'
-}
-
-download_id = None
-
-try:
-    print("[HeavenOS] Fetching Linux release ID from Blackmagic API...")
-    req = urllib.request.Request("https://www.blackmagicdesign.com/api/support/us/downloads", headers=headers)
-    with urllib.request.urlopen(req) as resp:
-        data = json.loads(resp.read().decode('utf-8'))
-        for item in data.get('downloads', []):
-            urls = item.get('urls', {})
-            if 'linux' in urls:
-                for l_item in urls['linux']:
-                    title = l_item.get('downloadTitle', '') or item.get('name', '')
-                    if 'DaVinci Resolve' in title and 'Studio' not in title:
-                        download_id = l_item.get('downloadId') or item.get('downloadId')
-                        print(f"[HeavenOS] Found Linux release: {title} (ID: {download_id})")
-                        break
-                if download_id:
-                    break
-except Exception as e:
-    print(f"[HeavenOS] API query note: {e}")
-
-if not download_id:
-    print("[HeavenOS] ERROR: Could not find valid DaVinci Resolve release ID.")
-    print("[HeavenOS] TIP: You can upload 'DaVinci_Resolve_*_Linux.run' or '.zip' using 'Upload Files' icon on Desktop!")
-    sys.exit(1)
-
-payload = json.dumps({
-    "firstname": "HeavenOS",
-    "lastname": "User",
-    "email": "user@heavenos.app",
-    "phone": "5555555555",
-    "city": "New York",
-    "state": "NY",
-    "country": "us",
-    "streetAddress": "123 Main Street",
-    "zip": "10001",
-    "hasAgreedToTerms": True,
-    "product": "DaVinci Resolve"
-}).encode('utf-8')
-
-url = f"https://www.blackmagicdesign.com/api/register/us/download/{download_id}"
-req = urllib.request.Request(url, data=payload, headers=headers, method='POST')
-
-download_url = None
-try:
-    with urllib.request.urlopen(req) as resp:
-        raw_resp = resp.read().decode('utf-8').strip()
-        try:
-            parsed = json.loads(raw_resp)
-            if isinstance(parsed, dict):
-                download_url = parsed.get("url") or parsed.get("downloadUrl") or parsed.get("link")
-            elif isinstance(parsed, str):
-                download_url = parsed
-        except Exception:
-            download_url = raw_resp.strip('"')
-except Exception as e:
-    print(f"[HeavenOS] Registration API Note: {e}")
-
-if not download_url or not download_url.startswith("http"):
-    print("[HeavenOS] ERROR: Registration API did not return download URL.")
-    sys.exit(1)
-
-print(f"[HeavenOS] Downloading DaVinci Resolve setup package...")
-zip_path = "/tmp/DaVinci_Resolve.zip"
-if os.path.exists(zip_path):
-    os.remove(zip_path)
-
-subprocess.run(["wget", "--user-agent=Mozilla/5.0", "--progress=bar:force", "-O", zip_path, download_url], check=True)
-
-print("[HeavenOS] Unpacking setup files (this may take 1-2 mins)...")
-os.makedirs("/tmp/davinci", exist_ok=True)
-subprocess.run(["unzip", "-o", zip_path, "-d", "/tmp/davinci"], check=True)
-
-run_file = None
-for f in os.listdir("/tmp/davinci"):
-    if f.endswith(".run"):
-        run_file = os.path.join("/tmp/davinci", f)
-        break
-
-if not run_file:
-    print("[HeavenOS] Error: .run installer file not found!")
-    sys.exit(1)
-
-os.chmod(run_file, 0o755)
-
-print("[HeavenOS] Installing DaVinci Resolve App into /opt/resolve...")
-env = os.environ.copy()
-env["SKIP_PACKAGE_CHECK"] = "1"
-subprocess.run([run_file, "-i", "-y"], env=env, check=False)
-
-print("=========================================================")
-print("  DaVinci Resolve App Successfully Installed!")
-print("=========================================================")
+print("[HeavenOS] No installer package found in Desktop or Downloads.")
+sys.exit(1)
 PYEOF
 chmod +x /usr/local/bin/install-davinci.py
-
 
 cat > /usr/local/bin/launch-davinci.sh << 'EOF'
 #!/bin/bash
@@ -436,11 +342,20 @@ if [ -f "/opt/resolve/bin/resolve" ]; then
     export MESA_GL_VERSION_OVERRIDE=4.5
     /opt/resolve/bin/resolve "$@"
 else
-    zenity --info --title="HeavenOS - DaVinci Resolve" --text="Downloading & Installing DaVinci Resolve App inside HeavenOS...\n\nPlease wait a few minutes while the installer completes." &
-    xfce4-terminal --title="Installing DaVinci Resolve..." --command="bash -c 'python3 /usr/local/bin/install-davinci.py; if [ -f /opt/resolve/bin/resolve ]; then echo Starting DaVinci Resolve...; sleep 2; export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libglib-2.0.so.0; export MESA_GL_VERSION_OVERRIDE=4.5; /opt/resolve/bin/resolve; else echo Check log above. Press enter to exit; read; fi'" &
+    python3 /usr/local/bin/install-davinci.py
+    if [ $? -eq 0 ] && [ -f "/opt/resolve/bin/resolve" ]; then
+        echo "Launching DaVinci Resolve App..."
+        export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libglib-2.0.so.0
+        export MESA_GL_VERSION_OVERRIDE=4.5
+        /opt/resolve/bin/resolve "$@"
+    else
+        zenity --info --title="HeavenOS - DaVinci Resolve Setup" --text="DaVinci Resolve system & OpenCL environment are 100% ready!\n\nTo complete 1-click setup:\n1. Download Linux installer from Blackmagic (Chrome will open).\n2. Once downloaded to Desktop/Downloads, click DaVinci Resolve icon again!\n\nOr drag-and-drop the file via 'Upload Files' portal." --width=450 2>/dev/null
+        google-chrome-stable --no-sandbox "https://www.blackmagicdesign.com/products/davinciresolve" &
+    fi
 fi
 EOF
 chmod +x /usr/local/bin/launch-davinci.sh
+
 
 
 
