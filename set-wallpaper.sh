@@ -294,6 +294,36 @@ print("=========================================================")
 print("  HeavenOS - Automated DaVinci Resolve Installer App")
 print("=========================================================")
 
+# 1. Check for local uploaded installer package on Desktop first
+local_pkg = None
+for f in os.listdir("/config/Desktop"):
+    if "DaVinci" in f and (f.endswith(".run") or f.endswith(".zip")):
+        local_pkg = os.path.join("/config/Desktop", f)
+        print(f"[HeavenOS] Detected local package on Desktop: {local_pkg}")
+        break
+
+if local_pkg:
+    if local_pkg.endswith(".zip"):
+        print("[HeavenOS] Extracting uploaded .zip archive...")
+        os.makedirs("/tmp/davinci", exist_ok=True)
+        subprocess.run(["unzip", "-o", local_pkg, "-d", "/tmp/davinci"], check=True)
+        for file in os.listdir("/tmp/davinci"):
+            if file.endswith(".run"):
+                run_file = os.path.join("/tmp/davinci", file)
+                break
+    else:
+        run_file = local_pkg
+
+    if run_file and os.path.exists(run_file):
+        os.chmod(run_file, 0o755)
+        print("[HeavenOS] Installing DaVinci Resolve App into /opt/resolve...")
+        env = os.environ.copy()
+        env["SKIP_PACKAGE_CHECK"] = "1"
+        subprocess.run([run_file, "-i", "-y"], env=env, check=False)
+        print("[HeavenOS] Installation complete!")
+        sys.exit(0)
+
+# 2. Automated Blackmagic API download
 headers = {
     'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:119.0) Gecko/20100101 Firefox/119.0',
     'Accept': 'application/json, text/plain, */*',
@@ -305,27 +335,33 @@ headers = {
 download_id = None
 
 try:
-    print("[HeavenOS] Querying latest DaVinci Resolve release...")
+    print("[HeavenOS] Fetching Linux release ID from Blackmagic API...")
     req = urllib.request.Request("https://www.blackmagicdesign.com/api/support/us/downloads", headers=headers)
     with urllib.request.urlopen(req) as resp:
         data = json.loads(resp.read().decode('utf-8'))
         for item in data.get('downloads', []):
-            name = item.get('name', '')
             urls = item.get('urls', {})
-            if 'DaVinci Resolve' in name and 'Studio' not in name and 'linux' in urls:
-                download_id = item.get('downloadId')
-                print(f"[HeavenOS] Found release: {name} (ID: {download_id})")
-                break
+            if 'linux' in urls:
+                for l_item in urls['linux']:
+                    title = l_item.get('downloadTitle', '') or item.get('name', '')
+                    if 'DaVinci Resolve' in title and 'Studio' not in title:
+                        download_id = l_item.get('downloadId') or item.get('downloadId')
+                        print(f"[HeavenOS] Found Linux release: {title} (ID: {download_id})")
+                        break
+                if download_id:
+                    break
 except Exception as e:
-    print(f"[HeavenOS] Downloads API query note: {e}")
+    print(f"[HeavenOS] API query note: {e}")
 
 if not download_id:
-    download_id = "6e5eb981881745aa98fbef842c525fbf"
+    print("[HeavenOS] ERROR: Could not find valid DaVinci Resolve release ID.")
+    print("[HeavenOS] TIP: You can upload 'DaVinci_Resolve_*_Linux.run' or '.zip' using 'Upload Files' icon on Desktop!")
+    sys.exit(1)
 
 payload = json.dumps({
     "firstname": "HeavenOS",
     "lastname": "User",
-    "email": "heavenosuser@gmail.com",
+    "email": "user@heavenos.app",
     "phone": "5555555555",
     "city": "New York",
     "state": "NY",
@@ -355,25 +391,7 @@ except Exception as e:
     print(f"[HeavenOS] Registration API Note: {e}")
 
 if not download_url or not download_url.startswith("http"):
-    print("[HeavenOS] Fetching direct download URL from Blackmagic mirror index...")
-    try:
-        req2 = urllib.request.Request("https://www.blackmagicdesign.com/api/support/us/downloads", headers=headers)
-        with urllib.request.urlopen(req2) as resp2:
-            d2 = json.loads(resp2.read().decode('utf-8'))
-            for item in d2.get('downloads', []):
-                urls = item.get('urls', {})
-                if 'linux' in urls:
-                    for l_item in urls['linux']:
-                        if isinstance(l_item, dict) and 'downloadUrl' in l_item:
-                            download_url = l_item['downloadUrl']
-                            break
-                if download_url:
-                    break
-    except Exception as e2:
-        print(f"[HeavenOS] Secondary mirror query note: {e2}")
-
-if not download_url or not download_url.startswith("http"):
-    print("[HeavenOS] ERROR: Could not obtain DaVinci Resolve download link!")
+    print("[HeavenOS] ERROR: Registration API did not return download URL.")
     sys.exit(1)
 
 print(f"[HeavenOS] Downloading DaVinci Resolve setup package...")
@@ -382,7 +400,6 @@ if os.path.exists(zip_path):
     os.remove(zip_path)
 
 subprocess.run(["wget", "--user-agent=Mozilla/5.0", "--progress=bar:force", "-O", zip_path, download_url], check=True)
-
 
 print("[HeavenOS] Unpacking setup files (this may take 1-2 mins)...")
 os.makedirs("/tmp/davinci", exist_ok=True)
@@ -410,6 +427,7 @@ print("  DaVinci Resolve App Successfully Installed!")
 print("=========================================================")
 PYEOF
 chmod +x /usr/local/bin/install-davinci.py
+
 
 cat > /usr/local/bin/launch-davinci.sh << 'EOF'
 #!/bin/bash
