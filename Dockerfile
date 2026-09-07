@@ -52,26 +52,24 @@ RUN apt-get install -y \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# ---- 5. Creative & Multimedia Apps & Pro Tools --------------------
+# ---- 5. Creative & Multimedia Apps & Pro Tools (Fast Build) ------
 RUN apt-get update && \
-    apt-get install -y \
+    apt-get install -y --no-install-recommends \
     blender gimp audacity vlc filezilla zenity \
     kdenlive krita && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# ---- 5.1 Natron VFX Install ---------------------------------------
-RUN wget -q -O /tmp/natron.tgz https://github.com/NatronGitHub/Natron/releases/download/v2.5.0/Natron-2.5.0-Linux-x86_64.tgz && \
-    mkdir -p /opt/natron && \
+# ---- 5.1 Natron VFX & Postman Parallel Download & Fast Install ----
+RUN (wget -q -O /tmp/natron.tgz https://github.com/NatronGitHub/Natron/releases/download/v2.5.0/Natron-2.5.0-Linux-x86_64.tgz & \
+     wget -q -O /tmp/postman.tar.gz https://dl.pstmn.io/download/latest/linux64) && wait && \
+    mkdir -p /opt/natron /opt/Postman && \
     tar -xzf /tmp/natron.tgz -C /opt/natron --strip-components=1 && \
-    ln -s /opt/natron/bin/Natron /usr/local/bin/natron && \
-    rm -f /tmp/natron.tgz
-
-# ---- 5.2 Postman Studio Install -----------------------------------
-RUN wget -q -O /tmp/postman.tar.gz https://dl.pstmn.io/download/latest/linux64 && \
     tar -xzf /tmp/postman.tar.gz -C /opt/ && \
+    ln -s /opt/natron/bin/Natron /usr/local/bin/natron && \
     ln -s /opt/Postman/Postman /usr/local/bin/postman && \
-    rm -f /tmp/postman.tar.gz
+    rm -f /tmp/natron.tgz /tmp/postman.tar.gz
+
 
 
 # ---- 6. Google Chrome Install -------------------------------------
