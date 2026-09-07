@@ -52,10 +52,14 @@ RUN apt-get install -y \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# ---- 5. Creative & Multimedia Apps --------------------------------
+# ---- 5. Creative & Multimedia Apps & DaVinci Resolve Stack -----
 RUN apt-get update && \
     apt-get install -y \
-    blender gimp audacity vlc filezilla && \
+    blender gimp audacity vlc filezilla zenity \
+    ocl-icd-opencl-dev opencl-headers mesa-opencl-icd pocl-opencl-icd \
+    libapr1 libaprutil1 libgl1-mesa-glx libglu1-mesa \
+    libxcb-cursor0 libxcb-xinerama0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-shape0 libxcb-xfixes0 \
+    unzip fakeroot libdbus-1-3 libfontconfig1 libfreetype6 libglib2.0-0 libxkbcommon-x11-0 && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 

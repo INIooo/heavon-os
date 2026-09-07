@@ -280,6 +280,36 @@ StartupNotify=true
 EOF
 chmod +x "$DESKTOP_DIR/VSCode.desktop"
 
+# ====================================================================
+#  DAVINCI RESOLVE LAUNCHER SCRIPT & PREPARATION
+# ====================================================================
+cat > /usr/local/bin/launch-davinci.sh << 'EOF'
+#!/bin/bash
+if [ -f "/opt/resolve/bin/resolve" ]; then
+    export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libglib-2.0.so.0
+    export MESA_GL_VERSION_OVERRIDE=4.5
+    /opt/resolve/bin/resolve "$@"
+else
+    zenity --info --title="DaVinci Resolve - HeavenOS" --text="DaVinci Resolve OpenCL & system dependencies are pre-installed on HeavenOS!\n\nTo run DaVinci Resolve:\n1. Download the Linux installer (.zip / .run) from Blackmagic Design.\n2. Upload it via HeavenOS 'Upload Files' portal.\n3. Run installer: sudo ./DaVinci_Resolve_*_Linux.run\n\nResolve will launch directly from this icon!" 2>/dev/null || xmessage -center "DaVinci Resolve dependencies installed! Download installer from Blackmagic & run sudo ./DaVinci_Resolve_*_Linux.run to finish setup."
+    google-chrome-stable --no-sandbox "https://www.blackmagicdesign.com/products/davinciresolve" &
+fi
+EOF
+chmod +x /usr/local/bin/launch-davinci.sh
+
+cat > "$DESKTOP_DIR/DaVinci Resolve.desktop" << 'EOF'
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=DaVinci Resolve
+Comment=Professional Video Editing & Color Correction
+Exec=/usr/local/bin/launch-davinci.sh
+Icon=video-display
+Terminal=false
+Categories=AudioVideo;Video;VideoEditing;
+StartupNotify=true
+EOF
+chmod +x "$DESKTOP_DIR/DaVinci Resolve.desktop"
+
 cat > "$DESKTOP_DIR/Blender.desktop" << 'EOF'
 [Desktop Entry]
 Version=1.0
@@ -401,6 +431,11 @@ cat > "$PLANK_DIR/VSCode.dockitem" << 'EOF'
 Launcher=file:///config/Desktop/VSCode.desktop
 EOF
 
+cat > "$PLANK_DIR/DaVinciResolve.dockitem" << 'EOF'
+[PlankDockItemPreferences]
+Launcher=file:///config/Desktop/DaVinci Resolve.desktop
+EOF
+
 cat > "$PLANK_DIR/Blender.dockitem" << 'EOF'
 [PlankDockItemPreferences]
 Launcher=file:///config/Desktop/Blender.desktop
@@ -420,6 +455,7 @@ cat > "$PLANK_DIR/Terminal.dockitem" << 'EOF'
 [PlankDockItemPreferences]
 Launcher=file:///config/Desktop/Terminal.desktop
 EOF
+
 
 # ====================================================================
 #  macOS SONOMA UI CONFIGURATION (WhiteSur GTK & Icons + Traffic Lights)
@@ -545,5 +581,6 @@ XMLEOF
 chown -R abc:abc /config/ 2>/dev/null || true
 chown abc:abc /usr/local/bin/apply-lotus-wallpaper.sh
 chown abc:abc /usr/local/bin/heaven-uploader.py
+chown abc:abc /usr/local/bin/launch-davinci.sh
 
 echo "[HeavenOS] macOS Sonoma UI + WhiteSur Theme + Plank Dock Registered!"
