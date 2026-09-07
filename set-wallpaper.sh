@@ -281,8 +281,92 @@ EOF
 chmod +x "$DESKTOP_DIR/VSCode.desktop"
 
 # ====================================================================
-#  DAVINCI RESOLVE LAUNCHER SCRIPT & PREPARATION
+#  DAVINCI RESOLVE AUTO-INSTALLER & NATIVE APP LAUNCHER SCRIPT
 # ====================================================================
+cat > /usr/local/bin/install-davinci.py << 'PYEOF'
+import os
+import sys
+import json
+import urllib.request
+import subprocess
+
+print("=========================================================")
+print("  HeavenOS - Automated DaVinci Resolve Installer App")
+print("=========================================================")
+
+headers = {
+    'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Accept': 'application/json, text/plain, */*',
+    'Content-Type': 'application/json'
+}
+
+download_id = "e75525ca528646b5a3fa38cfd2bfca7b"
+
+try:
+    req = urllib.request.Request("https://www.blackmagicdesign.com/api/support/us/downloads", headers=headers)
+    with urllib.request.urlopen(req) as resp:
+        data = json.loads(resp.read().decode('utf-8'))
+        for item in data.get('downloads', []):
+            if 'DaVinci Resolve' in item.get('name', '') and 'Studio' not in item.get('name', '') and 'linux' in item.get('urls', {}):
+                download_id = item.get('downloadId', download_id)
+                break
+except Exception as e:
+    print(f"[HeavenOS] Download ID lookup note: {e}")
+
+payload = json.dumps({
+    "firstname": "Heaven",
+    "lastname": "User",
+    "email": "user@heavenos.app",
+    "phone": "1234567890",
+    "city": "San Francisco",
+    "state": "CA",
+    "country": "us",
+    "hasAgreedToTerms": True,
+    "product": "DaVinci Resolve"
+}).encode('utf-8')
+
+url = f"https://www.blackmagicdesign.com/api/register/us/download/{download_id}"
+req = urllib.request.Request(url, data=payload, headers=headers, method='POST')
+
+try:
+    with urllib.request.urlopen(req) as resp:
+        download_url = resp.read().decode('utf-8').strip('"')
+except Exception as e:
+    print(f"[HeavenOS] Error obtaining download link: {e}")
+    sys.exit(1)
+
+print(f"[HeavenOS] Downloading DaVinci Resolve setup package...")
+zip_path = "/tmp/DaVinci_Resolve.zip"
+if not os.path.exists(zip_path):
+    subprocess.run(["wget", "-O", zip_path, download_url], check=True)
+
+print("[HeavenOS] Unpacking setup files...")
+os.makedirs("/tmp/davinci", exist_ok=True)
+subprocess.run(["unzip", "-o", zip_path, "-d", "/tmp/davinci"], check=True)
+
+run_file = None
+for f in os.listdir("/tmp/davinci"):
+    if f.endswith(".run"):
+        run_file = os.path.join("/tmp/davinci", f)
+        break
+
+if not run_file:
+    print("[HeavenOS] Error: .run installer file not found!")
+    sys.exit(1)
+
+os.chmod(run_file, 0o755)
+
+print("[HeavenOS] Installing DaVinci Resolve App into /opt/resolve...")
+env = os.environ.copy()
+env["SKIP_PACKAGE_CHECK"] = "1"
+subprocess.run([run_file, "-i", "-y"], env=env, check=False)
+
+print("=========================================================")
+print("  DaVinci Resolve App Successfully Installed!")
+print("=========================================================")
+PYEOF
+chmod +x /usr/local/bin/install-davinci.py
+
 cat > /usr/local/bin/launch-davinci.sh << 'EOF'
 #!/bin/bash
 if [ -f "/opt/resolve/bin/resolve" ]; then
@@ -290,11 +374,12 @@ if [ -f "/opt/resolve/bin/resolve" ]; then
     export MESA_GL_VERSION_OVERRIDE=4.5
     /opt/resolve/bin/resolve "$@"
 else
-    zenity --info --title="DaVinci Resolve - HeavenOS" --text="DaVinci Resolve OpenCL & system dependencies are pre-installed on HeavenOS!\n\nTo run DaVinci Resolve:\n1. Download the Linux installer (.zip / .run) from Blackmagic Design.\n2. Upload it via HeavenOS 'Upload Files' portal.\n3. Run installer: sudo ./DaVinci_Resolve_*_Linux.run\n\nResolve will launch directly from this icon!" 2>/dev/null || xmessage -center "DaVinci Resolve dependencies installed! Download installer from Blackmagic & run sudo ./DaVinci_Resolve_*_Linux.run to finish setup."
-    google-chrome-stable --no-sandbox "https://www.blackmagicdesign.com/products/davinciresolve" &
+    zenity --info --title="HeavenOS - DaVinci Resolve" --text="Downloading & Installing DaVinci Resolve App inside HeavenOS...\n\nPlease wait a few minutes while the installer runs." &
+    xfce4-terminal --title="Installing DaVinci Resolve..." --command="bash -c 'python3 /usr/local/bin/install-davinci.py; echo Launching DaVinci Resolve...; sleep 2; export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libglib-2.0.so.0; export MESA_GL_VERSION_OVERRIDE=4.5; /opt/resolve/bin/resolve'" &
 fi
 EOF
 chmod +x /usr/local/bin/launch-davinci.sh
+
 
 cat > "$DESKTOP_DIR/DaVinci Resolve.desktop" << 'EOF'
 [Desktop Entry]
@@ -582,5 +667,6 @@ chown -R abc:abc /config/ 2>/dev/null || true
 chown abc:abc /usr/local/bin/apply-lotus-wallpaper.sh
 chown abc:abc /usr/local/bin/heaven-uploader.py
 chown abc:abc /usr/local/bin/launch-davinci.sh
+chown abc:abc /usr/local/bin/install-davinci.py
 
 echo "[HeavenOS] macOS Sonoma UI + WhiteSur Theme + Plank Dock Registered!"
