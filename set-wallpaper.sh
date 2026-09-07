@@ -57,16 +57,17 @@ NoDisplay=false
 X-GNOME-Autostart-enabled=true
 EOF
 
-# ---- Startup Notice Autostart (DaVinci Resolve Optimization Note) ----
+# ---- Startup Notice Autostart (DaVinci Resolve Optimization Note & Credits) ----
 cat > "$AUTOSTART_DIR/heaven-notice.desktop" << 'EOF'
 [Desktop Entry]
 Type=Application
 Name=HeavenOS Notice
-Exec=zenity --info --title="HeavenOS" --text="Due to lack of optimisation, we couldn't include the following apps that we promised:\n\n1. DaVinci Resolve" --width=420
+Exec=zenity --info --title="HeavenOS" --text="Due to lack of optimisation, we couldn't include the following apps that we promised:\n\n1. DaVinci Resolve\n\n----------------------------------------\nCredits: Rohan2core and Prathamesh for programming" --width=450
 Hidden=false
 NoDisplay=false
 X-GNOME-Autostart-enabled=true
 EOF
+
 
 
 # ====================================================================
