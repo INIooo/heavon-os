@@ -100,11 +100,13 @@ RUN wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor 
 COPY Lotus-Wallpaper-Upscaled16x.png /lotus-wallpaper.png
 
 # ---- Purge ALL default system wallpapers & keep ONLY Lotus -------
-RUN rm -rf /usr/share/backgrounds/* /usr/share/wallpapers/* /usr/share/images/* /defaults/bg.png 2>/dev/null || true && \
-    mkdir -p /usr/share/backgrounds/xfce /usr/share/wallpapers /defaults && \
+RUN rm -rf /usr/share/backgrounds/* /usr/share/wallpapers/* /usr/share/images/* /usr/share/xfce4/backdrops/* /defaults/bg.png 2>/dev/null || true && \
+    mkdir -p /usr/share/backgrounds/xfce /usr/share/xfce4/backdrops /usr/share/wallpapers /defaults && \
     cp /lotus-wallpaper.png /usr/share/backgrounds/lotus.png && \
     cp /lotus-wallpaper.png /usr/share/backgrounds/xfce/lotus.png && \
+    cp /lotus-wallpaper.png /usr/share/xfce4/backdrops/lotus.png && \
     cp /lotus-wallpaper.png /defaults/bg.png
+
 
 # ---- Scripts copy ------------------------------------------------
 COPY apply-wallpaper.sh /apply-wallpaper.sh

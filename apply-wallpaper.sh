@@ -11,6 +11,17 @@ sleep 2
 # Kill any leftover xfce4-panel process (removes white box & panel handles)
 killall xfce4-panel 2>/dev/null || true
 
+# ---- Purge all default wallpapers from backdrops ------------------
+find /usr/share/backgrounds/ -type f ! -name "lotus.png" -delete 2>/dev/null || true
+find /usr/share/wallpapers/ -type f -delete 2>/dev/null || true
+find /usr/share/images/ -type f -delete 2>/dev/null || true
+find /usr/share/xfce4/ -name "*.png" -o -name "*.jpg" -o -name "*.jpeg" -o -name "*.svg" ! -name "lotus.png" -delete 2>/dev/null || true
+cp -f /lotus-wallpaper.png "$WALLPAPER" 2>/dev/null || true
+cp -f /lotus-wallpaper.png /usr/share/backgrounds/xfce/lotus.png 2>/dev/null || true
+cp -f /lotus-wallpaper.png /usr/share/xfce4/backdrops/lotus.png 2>/dev/null || true
+cp -f /lotus-wallpaper.png /defaults/bg.png 2>/dev/null || true
+
+
 # ---- Set wallpaper across all monitor properties ------------------
 for monitor in "monitor0" "monitor1" "monitorVNC-0"; do
     xfconf-query -c xfce4-desktop \

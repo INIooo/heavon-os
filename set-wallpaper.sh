@@ -16,13 +16,20 @@ mkdir -p "$DESKTOP_DIR"
 mkdir -p "$PLANK_DIR"
 
 # ---- Purge any old/cached backgrounds except lotus.png -----------
+mkdir -p /usr/share/backgrounds/xfce /usr/share/xfce4/backdrops /defaults
 find /usr/share/backgrounds/ -type f ! -name "lotus.png" -delete 2>/dev/null || true
 find /usr/share/wallpapers/ -type f -delete 2>/dev/null || true
+find /usr/share/images/ -type f -delete 2>/dev/null || true
+find /usr/share/xfce4/ -name "*.png" -o -name "*.jpg" -o -name "*.jpeg" -o -name "*.svg" ! -name "lotus.png" -delete 2>/dev/null || true
+
 cp -f /lotus-wallpaper.png "$WALLPAPER" 2>/dev/null || true
+cp -f /lotus-wallpaper.png /usr/share/backgrounds/xfce/lotus.png 2>/dev/null || true
+cp -f /lotus-wallpaper.png /usr/share/xfce4/backdrops/lotus.png 2>/dev/null || true
 cp -f /lotus-wallpaper.png /defaults/bg.png 2>/dev/null || true
 
 # ---- Clear old cached desktop settings ---------------------------
 rm -rf /config/.cache/xfce4/desktop 2>/dev/null || true
+
 
 # ---- apply-wallpaper script system copy --------------------------
 cp /apply-wallpaper.sh /usr/local/bin/apply-lotus-wallpaper.sh
