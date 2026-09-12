@@ -17,6 +17,7 @@ fi
 
 # ---- STEP 2: Build Image -------------------------------------------
 echo "[→] Building / Updating HeavenOS Docker image..."
+export DOCKER_BUILDKIT=1
 docker build -t heaven-os .
 if [ $? -ne 0 ]; then
     echo "ERROR: Build fail! Check karo Dockerfile."

@@ -1,6 +1,6 @@
 # ====================================================================
 #  HeavenOS - Based on Ubuntu XFCE (LinuxServer Webtop)
-#  v7.0 - Bulletproof macOS Theme (Direct Copy - No Install Scripts)
+#  v7.0 - Ultra-Fast Build Optimized (< 100s Target)
 # ====================================================================
 
 FROM lscr.io/linuxserver/webtop:ubuntu-xfce
@@ -23,76 +23,45 @@ ENV LP_NUM_THREADS=4
 
 EXPOSE 3000
 
-# ---- 1. Enable Repositories & Base Utilities ---------------------
-RUN apt-get update && \
-    apt-get install -y \
-    software-properties-common ca-certificates curl wget gnupg git \
-    gtk2-engines-murrine gtk2-engines-pixbuf plank && \
-    add-apt-repository -y universe && \
-    add-apt-repository -y multiverse && \
-    apt-get update
-
-# ---- 2. Install WhiteSur GTK Theme (macOS Traffic Lights & Dark UI) ---
-# Direct copy — 100% fail-proof, no script dependency errors!
-RUN git clone --depth 1 https://github.com/vinceliuice/WhiteSur-gtk-theme.git /tmp/WhiteSur-gtk && \
-    mkdir -p /usr/share/themes/WhiteSur-Dark && \
-    cp -r /tmp/WhiteSur-gtk/src/* /usr/share/themes/WhiteSur-Dark/ && \
-    rm -rf /tmp/WhiteSur-gtk
-
-# ---- 3. Install WhiteSur Icon Theme (macOS Icons) ----------------
-# Direct copy — 100% fail-proof!
-RUN git clone --depth 1 https://github.com/vinceliuice/WhiteSur-icon-theme.git /tmp/WhiteSur-icons && \
-    mkdir -p /usr/share/icons/WhiteSur && \
-    cp -r /tmp/WhiteSur-icons/src/* /usr/share/icons/WhiteSur/ 2>/dev/null || true && \
-    rm -rf /tmp/WhiteSur-icons
-
-# ---- 4. Developer Tools (Python3 & Node.js) ----------------------
-RUN apt-get install -y \
-    python3 python3-pip python3-venv nodejs && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-
-# ---- 5. Creative & Multimedia Apps & Pro Tools (Fast Build) ------
+# ---- 1. Enable Repositories & Single Apt Update ------------------
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-    blender gimp audacity vlc filezilla zenity \
-    kdenlive krita && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+    software-properties-common ca-certificates curl wget gnupg git aria2 && \
+    add-apt-repository -y universe && \
+    add-apt-repository -y multiverse && \
+    wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > /etc/apt/trusted.gpg.d/packages.microsoft.gpg && \
+    echo "deb [arch=amd64,arm64,armhf signed-by=/etc/apt/trusted.gpg.d/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list && \
+    apt-get update
 
-# ---- 5.1 Natron VFX & Postman Parallel Download & Fast Install ----
-RUN (wget -q -O /tmp/natron.tgz https://github.com/NatronGitHub/Natron/releases/download/v2.5.0/Natron-2.5.0-Linux-x86_64.tgz & \
-     wget -q -O /tmp/postman.tar.gz https://dl.pstmn.io/download/latest/linux64) && wait && \
-    mkdir -p /opt/natron /opt/Postman && \
-    tar -xzf /tmp/natron.tgz -C /opt/natron --strip-components=1 && \
-    tar -xzf /tmp/postman.tar.gz -C /opt/ && \
+# ---- 2. High-Speed Parallel Download (Chrome, Discord, Natron, Postman, WhiteSur Themes) ----
+RUN mkdir -p /tmp/downloads && \
+    (aria2c -s 16 -x 16 -k 1M -d /tmp/downloads -o chrome.deb "https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb" & \
+     aria2c -s 16 -x 16 -k 1M -d /tmp/downloads -o discord.deb "https://discord.com/api/download?platform=linux&format=deb" & \
+     aria2c -s 16 -x 16 -k 1M -d /tmp/downloads -o natron.tgz "https://github.com/NatronGitHub/Natron/releases/download/v2.5.0/Natron-2.5.0-Linux-x86_64.tgz" & \
+     aria2c -s 16 -x 16 -k 1M -d /tmp/downloads -o postman.tar.gz "https://dl.pstmn.io/download/latest/linux64" & \
+     git clone --depth 1 https://github.com/vinceliuice/WhiteSur-gtk-theme.git /tmp/WhiteSur-gtk & \
+     git clone --depth 1 https://github.com/vinceliuice/WhiteSur-icon-theme.git /tmp/WhiteSur-icons) && wait
+
+# ---- 3. Single Consolidated Fast Package Installation -------------
+RUN apt-get install -y --no-install-recommends \
+    gtk2-engines-murrine gtk2-engines-pixbuf plank \
+    sound-theme-freedesktop ubuntu-sounds yaru-theme-sound \
+    libcanberra-gtk-module libcanberra-gtk3-module \
+    pulseaudio-utils alsa-utils sox vorbis-tools \
+    python3 python3-pip python3-venv nodejs \
+    blender gimp audacity vlc filezilla zenity kdenlive krita code \
+    /tmp/downloads/chrome.deb \
+    /tmp/downloads/discord.deb || apt-get install -fy
+
+# ---- 4. Install Themes, Extract Tarballs & Cleanup ---------------
+RUN mkdir -p /usr/share/themes/WhiteSur-Dark /usr/share/icons/WhiteSur /opt/natron /opt/Postman && \
+    cp -r /tmp/WhiteSur-gtk/src/* /usr/share/themes/WhiteSur-Dark/ && \
+    cp -r /tmp/WhiteSur-icons/src/* /usr/share/icons/WhiteSur/ 2>/dev/null || true && \
+    tar -xzf /tmp/downloads/natron.tgz -C /opt/natron --strip-components=1 && \
+    tar -xzf /tmp/downloads/postman.tar.gz -C /opt/ && \
     ln -s /opt/natron/bin/Natron /usr/local/bin/natron && \
     ln -s /opt/Postman/Postman /usr/local/bin/postman && \
-    rm -f /tmp/natron.tgz /tmp/postman.tar.gz
-
-
-
-# ---- 6. Google Chrome Install -------------------------------------
-RUN wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \
-    apt-get update && \
-    (apt-get install -y ./google-chrome-stable_current_amd64.deb || apt-get install -fy) && \
-    rm -f google-chrome-stable_current_amd64.deb && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-
-# ---- 7. Discord Install -------------------------------------------
-RUN wget -q -O discord.deb "https://discord.com/api/download?platform=linux&format=deb" && \
-    apt-get update && \
-    (apt-get install -y ./discord.deb || apt-get install -fy) && \
-    rm -f discord.deb && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-
-# ---- 8. VS Code Install -------------------------------------------
-RUN wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > /etc/apt/trusted.gpg.d/packages.microsoft.gpg && \
-    echo "deb [arch=amd64,arm64,armhf signed-by=/etc/apt/trusted.gpg.d/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list && \
-    apt-get update && \
-    apt-get install -y code && \
+    rm -rf /tmp/downloads /tmp/WhiteSur-gtk /tmp/WhiteSur-icons && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -107,7 +76,6 @@ RUN rm -rf /usr/share/backgrounds/* /usr/share/wallpapers/* /usr/share/images/* 
     cp /lotus-wallpaper.png /usr/share/xfce4/backdrops/lotus.png && \
     cp /lotus-wallpaper.png /defaults/bg.png
 
-
 # ---- Scripts copy ------------------------------------------------
 COPY apply-wallpaper.sh /apply-wallpaper.sh
 RUN chmod +x /apply-wallpaper.sh
@@ -115,3 +83,4 @@ RUN chmod +x /apply-wallpaper.sh
 # ---- cont-init script --------------------------------------------
 COPY set-wallpaper.sh /custom-cont-init.d/99-heaven-wallpaper.sh
 RUN chmod +x /custom-cont-init.d/99-heaven-wallpaper.sh
+

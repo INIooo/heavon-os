@@ -68,10 +68,22 @@ NoDisplay=false
 X-GNOME-Autostart-enabled=true
 EOF
 
+# ---- Ubuntu Sound Theme Startup Sound Autostart ----
+cat > "$AUTOSTART_DIR/heaven-sound.desktop" << 'EOF'
+[Desktop Entry]
+Type=Application
+Name=HeavenOS Startup Sound
+Exec=bash -c "sleep 1 && (canberra-gtk-play -i desktop-login 2>/dev/null || paplay /usr/share/sounds/ubuntu/stereo/desktop-login.ogg 2>/dev/null || aplay /usr/share/sounds/alsa/Front_Center.wav 2>/dev/null)"
+Hidden=false
+NoDisplay=false
+X-GNOME-Autostart-enabled=true
+EOF
+
+
 
 
 # ====================================================================
-#  HEAVENOS FILE UPLOADER SERVICE (Drag & Drop File Upload Portal)
+#  HEAVENOS MODERN CONTROL CENTER & FILE UPLOADER PORTAL (Port 8889)
 # ====================================================================
 cat > /usr/local/bin/heaven-uploader.py << 'PYEOF'
 import os
@@ -88,84 +100,401 @@ class UploadHandler(BaseHTTPRequestHandler):
         self.send_header('Content-type', 'text/html')
         self.end_headers()
         html = '''<!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>HeavenOS File Drop</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8">
+    <title>HeavenOS - Cloud Control Center & Launchpad</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        * { box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #0b0f19; color: #e2e8f0; margin:0; padding: 20px; display:flex; justify-content:center; align-items:center; min-height:100vh; }
-        .card { background: #161e2e; border: 1px solid #2d3748; padding: 35px; border-radius: 16px; width: 100%; max-width: 550px; text-align: center; box-shadow: 0 20px 30px rgba(0,0,0,0.5); }
-        h2 { color: #38bdf8; font-size: 24px; margin-top: 0; margin-bottom: 8px; }
-        p { color: #94a3b8; font-size: 14px; margin-bottom: 25px; }
-        .drop-area { border: 2px dashed #38bdf8; background: rgba(56, 189, 248, 0.04); border-radius: 12px; padding: 40px 20px; cursor: pointer; transition: 0.3s; }
-        .drop-area:hover, .drop-area.highlight { background: rgba(56, 189, 248, 0.12); border-color: #7dd3fc; }
-        .icon { font-size: 48px; margin-bottom: 10px; display:block; }
-        input[type="file"] { display: none; }
-        .btn { background: linear-gradient(135deg, #0284c7, #2563eb); color: white; border: none; padding: 12px 28px; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 20px; transition: 0.2s; box-shadow: 0 4px 12px rgba(2,132,199,0.3); }
-        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
-        #status { margin-top: 20px; font-size: 14px; font-weight: 600; }
-        .progress-bar { width: 100%; background: #1e293b; height: 8px; border-radius: 4px; overflow: hidden; margin-top: 15px; display: none; }
-        .progress-fill { height: 100%; background: #38bdf8; width: 0%; transition: width 0.1s; }
-        .file-info { margin-top: 15px; font-size: 13px; color: #a0aec0; text-align: left; background: #0f172a; padding: 10px; border-radius: 6px; display: none; }
+        :root {
+            --bg-color: #060913;
+            --glass-bg: rgba(18, 25, 41, 0.72);
+            --glass-border: rgba(255, 255, 255, 0.12);
+            --glass-hover: rgba(255, 255, 255, 0.18);
+            --accent-cyan: #38bdf8;
+            --accent-purple: #818cf8;
+            --accent-pink: #f472b6;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: radial-gradient(circle at 15% 15%, #10192d 0%, #060913 80%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 30px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 960px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        /* Glass Panel */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 28px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .brand-logo {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
+        }
+
+        .brand-info h1 {
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            background: linear-gradient(90deg, #ffffff, var(--accent-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .brand-info p {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .badge-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(56, 189, 248, 0.1);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            padding: 6px 16px;
+            border-radius: 30px;
+            font-size: 13px;
+            color: var(--accent-cyan);
+            font-weight: 500;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #34d399;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #34d399;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.3); opacity: 0.6; }
+        }
+
+        /* Section Titles */
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        /* Sound FX Board */
+        .sound-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 14px;
+        }
+
+        .sound-btn {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--glass-border);
+            border-radius: 14px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            color: var(--text-primary);
+        }
+
+        .sound-btn:hover {
+            background: rgba(56, 189, 248, 0.12);
+            border-color: var(--accent-cyan);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(56, 189, 248, 0.15);
+        }
+
+        .sound-btn .icon { font-size: 22px; }
+        .sound-btn .label { font-size: 14px; font-weight: 500; }
+
+        /* Drop Area */
+        .drop-zone {
+            border: 2px dashed rgba(56, 189, 248, 0.4);
+            background: rgba(56, 189, 248, 0.03);
+            border-radius: 16px;
+            padding: 36px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .drop-zone:hover, .drop-zone.dragover {
+            background: rgba(56, 189, 248, 0.1);
+            border-color: var(--accent-cyan);
+            transform: scale(1.01);
+        }
+
+        .drop-icon { font-size: 42px; margin-bottom: 12px; display: inline-block; }
+        .drop-title { font-size: 16px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+        .drop-subtitle { font-size: 13px; color: var(--text-secondary); }
+
+        .btn-upload {
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            color: #ffffff;
+            border: none;
+            padding: 12px 32px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 18px;
+            transition: all 0.25s ease;
+            box-shadow: 0 6px 20px rgba(56, 189, 248, 0.3);
+        }
+
+        .btn-upload:hover {
+            opacity: 0.92;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(56, 189, 248, 0.4);
+        }
+
+        /* File Info & Progress */
+        .file-list {
+            margin-top: 16px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-align: left;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 12px 16px;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 16px;
+            display: none;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-purple));
+            width: 0%;
+            transition: width 0.2s;
+        }
+
+        #statusMsg {
+            margin-top: 14px;
+            font-size: 14px;
+            font-weight: 600;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
-    <div class="card">
-        <span class="icon">☁️</span>
-        <h2>HeavenOS File Uploader</h2>
-        <p>Upload video, audio, images, 3D models or editing files directly to your HeavenOS Desktop!</p>
-
-        <div class="drop-area" id="dropArea" onclick="document.getElementById('fileInput').click()">
-            📁 <br><b>Click to Choose Files</b> or Drag & Drop here
-            <input type="file" id="fileInput" multiple onchange="handleFiles(this.files)">
+    <div class="container">
+        <!-- Top Glass Header -->
+        <div class="glass-card header">
+            <div class="brand">
+                <div class="brand-logo">☁️</div>
+                <div class="brand-info">
+                    <h1>HeavenOS Control Center</h1>
+                    <p>macOS Sonoma Workstation • v7.5 Dark Glass</p>
+                </div>
+            </div>
+            <div class="badge-status">
+                <span class="status-dot"></span> System Audio & Cloud Active
+            </div>
         </div>
 
-        <div class="file-info" id="fileInfo"></div>
-        <div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
-        <button class="btn" onclick="uploadFiles()">Upload Files</button>
-        <div id="status"></div>
+        <!-- Interactive Sound Effects Board -->
+        <div class="glass-card">
+            <div class="section-title">🔊 Sound Effects Board</div>
+            <div class="sound-grid">
+                <div class="sound-btn" onclick="playSound('startup')">
+                    <span class="icon">🔔</span>
+                    <span class="label">Startup Sound</span>
+                </div>
+                <div class="sound-btn" onclick="playSound('alert')">
+                    <span class="icon">⚡</span>
+                    <span class="label">Alert Tone</span>
+                </div>
+                <div class="sound-btn" onclick="playSound('notification')">
+                    <span class="icon">💬</span>
+                    <span class="label">Notification</span>
+                </div>
+                <div class="sound-btn" onclick="playSound('trash')">
+                    <span class="icon">🗑️</span>
+                    <span class="label">Trash Action</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Drag & Drop File Upload -->
+        <div class="glass-card">
+            <div class="section-title">📁 Drag & Drop Desktop Portal</div>
+            <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+                <span class="drop-icon">📤</span>
+                <div class="drop-title">Drop files here or click to browse</div>
+                <div class="drop-subtitle">Upload videos, audio, images, code or 3D models straight to Desktop</div>
+                <input type="file" id="fileInput" multiple style="display:none;" onchange="handleFiles(this.files)">
+            </div>
+
+            <div class="file-list" id="fileList"></div>
+            <div class="progress-container" id="progressContainer">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            <button class="btn-upload" onclick="uploadFiles()">Upload to HeavenOS Desktop</button>
+            <div id="statusMsg"></div>
+        </div>
     </div>
 
     <script>
+        // Web Audio API Sound Synthesizer
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            
+            const now = audioCtx.currentTime;
+            
+            if (type === 'startup') {
+                // Harmonic F# Major Startup Chime (F#3, C#4, F#4, A#4)
+                const freqs = [185.00, 277.18, 369.99, 466.16];
+                freqs.forEach(freq => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now);
+                    
+                    gain.gain.setValueAtTime(0.001, now);
+                    gain.gain.linearRampToValueAtTime(0.15, now + 0.1);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, now + 3.0);
+                    
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now);
+                    osc.stop(now + 3.0);
+                });
+            } else if (type === 'alert') {
+                // Dual tone alert
+                [587.33, 880].forEach((freq, idx) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, now + (idx * 0.08));
+                    gain.gain.setValueAtTime(0.2, now + (idx * 0.08));
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + (idx * 0.08) + 0.3);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now + (idx * 0.08));
+                    osc.stop(now + (idx * 0.08) + 0.3);
+                });
+            } else if (type === 'notification') {
+                // Bell chime
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(1046.50, now);
+                gain.gain.setValueAtTime(0.25, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + 0.8);
+            } else if (type === 'trash') {
+                // Soft swoosh tone
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.exponentialRampToValueAtTime(80, now + 0.25);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + 0.25);
+            }
+        }
+
+        // Drag & Drop Handling
         let selectedFiles = [];
-        const dropArea = document.getElementById('dropArea');
+        const dropZone = document.getElementById('dropZone');
 
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-            dropArea.addEventListener(eventName, preventDefaults, false);
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(evt => {
+            dropZone.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); });
         });
 
-        function preventDefaults(e) { e.preventDefault(); e.stopPropagation(); }
+        ['dragenter', 'dragover'].forEach(evt => dropZone.classList.add('dragover'));
+        ['dragleave', 'drop'].forEach(evt => dropZone.classList.remove('dragover'));
 
-        ['dragenter', 'dragover'].forEach(eventName => {
-            dropArea.classList.add('highlight');
-        });
-
-        ['dragleave', 'drop'].forEach(eventName => {
-            dropArea.classList.remove('highlight');
-        });
-
-        dropArea.addEventListener('drop', (e) => {
-            let dt = e.dataTransfer;
-            handleFiles(dt.files);
-        });
+        dropZone.addEventListener('drop', e => handleFiles(e.dataTransfer.files));
 
         function handleFiles(files) {
             selectedFiles = Array.from(files);
-            let info = document.getElementById('fileInfo');
-            info.style.display = 'block';
-            info.innerHTML = '<b>Selected Files:</b><br>' + selectedFiles.map(f => '• ' + f.name + ' (' + (f.size/1024/1024).toFixed(2) + ' MB)').join('<br>');
+            const list = document.getElementById('fileList');
+            list.style.display = 'block';
+            list.innerHTML = '<b>Selected Files:</b><br>' + selectedFiles.map(f => '• ' + f.name + ' (' + (f.size/1024/1024).toFixed(2) + ' MB)').join('<br>');
         }
 
         function uploadFiles() {
-            if (!selectedFiles.length) { alert('Select at least one file!'); return; }
-            let status = document.getElementById('status');
-            let pBar = document.getElementById('progressBar');
-            let pFill = document.getElementById('progressFill');
+            if (!selectedFiles.length) { alert('Select at least one file to upload!'); return; }
+            const status = document.getElementById('statusMsg');
+            const progressContainer = document.getElementById('progressContainer');
+            const progressBar = document.getElementById('progressBar');
 
-            status.style.color = '#38bdf8';
+            status.style.color = 'var(--accent-cyan)';
             status.innerText = 'Uploading...';
-            pBar.style.display = 'block';
+            progressContainer.style.display = 'block';
 
             let formData = new FormData();
             selectedFiles.forEach(f => formData.append('files', f));
@@ -176,20 +505,22 @@ class UploadHandler(BaseHTTPRequestHandler):
             xhr.upload.onprogress = function(e) {
                 if (e.lengthComputable) {
                     let percent = (e.loaded / e.total) * 100;
-                    pFill.style.width = percent + '%';
+                    progressBar.style.width = percent + '%';
                 }
             };
 
             xhr.onload = function() {
-                if (xhr.status == 200) {
-                    status.style.color = '#4ade80';
-                    status.innerText = '✅ Upload Successful! Files saved to Desktop.';
+                if (xhr.status === 200) {
+                    status.style.color = '#34d399';
+                    status.innerText = '✅ Upload Successful! Files placed on HeavenOS Desktop.';
+                    playSound('notification');
                     selectedFiles = [];
-                    document.getElementById('fileInfo').style.display = 'none';
-                    setTimeout(() => { pBar.style.display = 'none'; pFill.style.width = '0%'; }, 2000);
+                    document.getElementById('fileList').style.display = 'none';
+                    setTimeout(() => { progressContainer.style.display = 'none'; progressBar.style.width = '0%'; }, 2500);
                 } else {
                     status.style.color = '#f87171';
                     status.innerText = '❌ Upload Failed!';
+                    playSound('alert');
                 }
             };
 
@@ -531,9 +862,10 @@ cat > "$CONFIG_DIR/xsettings.xml" << 'XSETEOF'
   <property name="Net" type="empty">
     <property name="ThemeName" type="string" value="WhiteSur-Dark"/>
     <property name="IconThemeName" type="string" value="WhiteSur"/>
+    <property name="SoundThemeName" type="string" value="ubuntu"/>
     <property name="CursorThemeName" type="string" value="WhiteSur-cursors"/>
-    <property name="EnableEventSounds" type="bool" value="false"/>
-    <property name="EnableInputFeedbackSounds" type="bool" value="false"/>
+    <property name="EnableEventSounds" type="bool" value="true"/>
+    <property name="EnableInputFeedbackSounds" type="bool" value="true"/>
   </property>
   <property name="Gtk" type="empty">
     <property name="FontName" type="string" value="Ubuntu 10"/>
@@ -580,15 +912,31 @@ cat > "$CONFIG_DIR/xfce4-panel.xml" << 'PANELXML'
 </channel>
 PANELXML
 
-# ---- GTK3 CSS Override (macOS Translucent Top Bar & No White Box) ---
+# ---- GTK3 CSS Override (macOS Sonoma Glassmorphism & UI Enhancements) ---
 mkdir -p /config/.config/gtk-3.0
 cat > /config/.config/gtk-3.0/gtk.css << 'CSSEOF'
+/* macOS Sonoma Glassmorphic Base Theme */
+window,
+dialog,
+headerbar,
+.titlebar {
+    border-radius: 14px 14px 0 0 !important;
+    background-color: rgba(15, 23, 42, 0.92) !important;
+    color: #f8fafc !important;
+}
+
+headerbar {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3) !important;
+}
+
 /* macOS Sonoma Top Bar Translucent Styling */
 .xfce4-panel,
 panel-window {
-    background-color: rgba(15, 23, 42, 0.85) !important;
+    background-color: rgba(15, 23, 42, 0.75) !important;
     color: #f8fafc !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4) !important;
 }
 
 /* Remove white background box from top-left button & all panel buttons */
@@ -604,6 +952,33 @@ panel-window {
     border: none !important;
     box-shadow: none !important;
     color: #f8fafc !important;
+    font-weight: 500 !important;
+}
+
+/* Modern Rounded Buttons & Hover Glows */
+button.suggested-action {
+    background: linear-gradient(135deg, #0284c7, #2563eb) !important;
+    border-radius: 8px !important;
+    border: none !important;
+    color: #ffffff !important;
+    font-weight: 600 !important;
+    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3) !important;
+}
+
+button.suggested-action:hover {
+    box-shadow: 0 6px 16px rgba(2, 132, 199, 0.45) !important;
+}
+
+/* Sleek Dark Scrollbars */
+scrollbar slider {
+    background-color: rgba(255, 255, 255, 0.2) !important;
+    border-radius: 10px !important;
+    min-width: 6px !important;
+    min-height: 6px !important;
+}
+
+scrollbar slider:hover {
+    background-color: rgba(56, 189, 248, 0.6) !important;
 }
 CSSEOF
 
