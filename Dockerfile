@@ -45,18 +45,17 @@ RUN mkdir -p /tmp/downloads && \
      git clone --depth 1 https://github.com/vinceliuice/WhiteSur-icon-theme.git /tmp/WhiteSur-icons 2>/dev/null || true) && wait
 
 # ---- 3. Single Consolidated Fast Package Installation -------------
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get install -y \
     gtk2-engines-murrine gtk2-engines-pixbuf plank \
     sound-theme-freedesktop ubuntu-sounds yaru-theme-sound \
     libcanberra-gtk-module libcanberra-gtk3-module \
     pulseaudio-utils alsa-utils sox vorbis-tools \
     python3 python3-pip python3-venv nodejs \
     blender gimp audacity vlc filezilla zenity kdenlive krita code \
-    google-chrome-stable \
     thunar xfce4-terminal \
-    fonts-liberation libu2f-udev libvulkan1 xdg-utils || apt-get install -fy
+    fonts-liberation libu2f-udev libvulkan1 xdg-utils libnspr4 libnss3 || apt-get install -fy
 
-RUN (dpkg -i /tmp/downloads/chrome.deb /tmp/downloads/discord.deb 2>/dev/null || apt-get install -fy google-chrome-stable)
+RUN dpkg -i /tmp/downloads/chrome.deb /tmp/downloads/discord.deb || apt-get install -fy
 
 # ---- 4. Install Themes, Extract Tarballs & Cleanup ---------------
 RUN mkdir -p /usr/share/themes/WhiteSur-Dark /usr/share/icons/WhiteSur /opt/natron /opt/Postman && \
