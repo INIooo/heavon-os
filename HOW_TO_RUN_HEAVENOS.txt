@@ -23,11 +23,14 @@ STEP 1: GOOGLE CLOUD SHELL OPEN KARO
 4. Terminal open ho jayega.
 
 --------------------------------------------------------------------
-STEP 2: HEAVENOS REPOSITORY CLONE & START KARO
+STEP 2: HEAVENOS START KARO
 --------------------------------------------------------------------
-Terminal me ye single command paste karke Enter dabao:
+OPTION A (Agar folder already local PC / Cloud Shell me hai - GitHub ki zaroorat NAHI hai):
+   bash start_heaven_os.sh
+   (ya agar 'heavon-os' subfolder me ho: cd heavon-os && bash start_heaven_os.sh)
 
-docker rm -f heaven-os 2>/dev/null ; docker rmi heaven-os 2>/dev/null ; rm -rf heavon-os ; git clone https://github.com/INIooo/heavon-os.git && cd heavon-os && bash start_heaven_os.sh
+OPTION B (Agar fresh GitHub Clone karna ho):
+   docker rm -f heaven-os 2>/dev/null ; docker rmi heaven-os 2>/dev/null ; rm -rf heavon-os ; git clone https://github.com/INIooo/heavon-os.git && cd heavon-os && bash start_heaven_os.sh
 
 (HeavenOS build ho kar Port 8888 par launch ho jayega!)
 

@@ -37,12 +37,12 @@ RUN apt-get update && \
 
 # ---- 2. High-Speed Parallel Download (Chrome, Discord, Natron, Postman, WhiteSur Themes) ----
 RUN mkdir -p /tmp/downloads && \
-    (aria2c -s 16 -x 16 -k 1M -d /tmp/downloads -o chrome.deb "https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb" & \
-     aria2c -s 16 -x 16 -k 1M -d /tmp/downloads -o discord.deb "https://discord.com/api/download?platform=linux&format=deb" & \
-     aria2c -s 16 -x 16 -k 1M -d /tmp/downloads -o natron.tgz "https://github.com/NatronGitHub/Natron/releases/download/v2.5.0/Natron-2.5.0-Linux-x86_64.tgz" & \
-     aria2c -s 16 -x 16 -k 1M -d /tmp/downloads -o postman.tar.gz "https://dl.pstmn.io/download/latest/linux64" & \
-     git clone --depth 1 https://github.com/vinceliuice/WhiteSur-gtk-theme.git /tmp/WhiteSur-gtk & \
-     git clone --depth 1 https://github.com/vinceliuice/WhiteSur-icon-theme.git /tmp/WhiteSur-icons) && wait
+    (aria2c -s 16 -x 16 -k 1M -d /tmp/downloads -o chrome.deb "https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb" 2>/dev/null || true & \
+     aria2c -s 16 -x 16 -k 1M -d /tmp/downloads -o discord.deb "https://discord.com/api/download?platform=linux&format=deb" 2>/dev/null || true & \
+     aria2c -s 16 -x 16 -k 1M -d /tmp/downloads -o natron.tgz "https://github.com/NatronGitHub/Natron/releases/download/v2.5.0/Natron-2.5.0-Linux-x86_64.tgz" 2>/dev/null || true & \
+     aria2c -s 16 -x 16 -k 1M -d /tmp/downloads -o postman.tar.gz "https://dl.pstmn.io/download/latest/linux64" 2>/dev/null || true & \
+     git clone --depth 1 https://github.com/vinceliuice/WhiteSur-gtk-theme.git /tmp/WhiteSur-gtk 2>/dev/null || true & \
+     git clone --depth 1 https://github.com/vinceliuice/WhiteSur-icon-theme.git /tmp/WhiteSur-icons 2>/dev/null || true) && wait
 
 # ---- 3. Single Consolidated Fast Package Installation -------------
 RUN apt-get update && apt-get install -y --no-install-recommends \
