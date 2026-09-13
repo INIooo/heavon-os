@@ -52,10 +52,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     pulseaudio-utils alsa-utils sox vorbis-tools \
     python3 python3-pip python3-venv nodejs \
     blender gimp audacity vlc filezilla zenity kdenlive krita code \
+    google-chrome-stable \
     thunar xfce4-terminal \
     fonts-liberation libu2f-udev libvulkan1 xdg-utils || apt-get install -fy
 
-RUN dpkg -i /tmp/downloads/chrome.deb /tmp/downloads/discord.deb || apt-get install -fy
+RUN (dpkg -i /tmp/downloads/chrome.deb /tmp/downloads/discord.deb 2>/dev/null || apt-get install -fy google-chrome-stable)
 
 # ---- 4. Install Themes, Extract Tarballs & Cleanup ---------------
 RUN mkdir -p /usr/share/themes/WhiteSur-Dark /usr/share/icons/WhiteSur /opt/natron /opt/Postman && \

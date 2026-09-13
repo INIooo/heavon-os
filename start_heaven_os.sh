@@ -16,9 +16,11 @@ if ! command -v docker &> /dev/null; then
 fi
 
 # ---- STEP 2: Build Image -------------------------------------------
-echo "[→] Building / Updating HeavenOS Docker image..."
+echo "[→] Cleaning old container & building fresh HeavenOS Docker image..."
+docker rm -f heaven-os 2>/dev/null || true
+docker rmi heaven-os 2>/dev/null || true
 export DOCKER_BUILDKIT=1
-docker build -t heaven-os .
+docker build --no-cache -t heaven-os .
 if [ $? -ne 0 ]; then
     echo "ERROR: Build fail! Check karo Dockerfile."
     exit 1
