@@ -29,6 +29,7 @@ RUN apt-get update && \
     software-properties-common ca-certificates curl wget gnupg git aria2 && \
     add-apt-repository -y universe && \
     add-apt-repository -y multiverse && \
+    sed -i 's/main/main universe multiverse/g' /etc/apt/sources.list 2>/dev/null || true && \
     wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > /etc/apt/trusted.gpg.d/packages.microsoft.gpg && \
     echo "deb [arch=amd64,arm64,armhf signed-by=/etc/apt/trusted.gpg.d/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list && \
     wget -qO- https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor > /etc/apt/trusted.gpg.d/google-chrome.gpg && \
@@ -44,17 +45,21 @@ RUN mkdir -p /tmp/downloads && \
      git clone --depth 1 https://github.com/vinceliuice/WhiteSur-gtk-theme.git /tmp/WhiteSur-gtk 2>/dev/null || true & \
      git clone --depth 1 https://github.com/vinceliuice/WhiteSur-icon-theme.git /tmp/WhiteSur-icons 2>/dev/null || true) && wait
 
-# ---- 3. Single Consolidated Fast Package Installation -------------
+# ---- 3. Base Utilities & GUI Components -------------------------
 RUN apt-get update && apt-get install -y \
     gtk2-engines-murrine gtk2-engines-pixbuf plank \
     sound-theme-freedesktop ubuntu-sounds yaru-theme-sound \
     libcanberra-gtk-module libcanberra-gtk3-module \
     pulseaudio-utils alsa-utils sox vorbis-tools \
     python3 python3-pip python3-venv nodejs \
-    blender gimp audacity vlc filezilla zenity kdenlive krita code \
-    thunar xfce4-terminal \
+    zenity thunar xfce4-terminal \
     fonts-liberation libu2f-udev libvulkan1 xdg-utils libnspr4 libnss3 || apt-get install -fy
 
+# ---- 4. Creative & Multimedia App Suite (Blender, GIMP, Kdenlive, etc.) ----
+RUN apt-get update && apt-get install -y \
+    blender gimp audacity vlc filezilla kdenlive krita code || apt-get install -fy
+
+# ---- 5. Install Local Deb Packages (Chrome & Discord) -------------
 RUN dpkg -i /tmp/downloads/chrome.deb /tmp/downloads/discord.deb || apt-get install -fy
 
 # ---- 4. Install Themes, Extract Tarballs & Cleanup ---------------

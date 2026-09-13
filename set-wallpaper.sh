@@ -639,6 +639,76 @@ fi
 POSTMANWRAPPER
 chmod +x /usr/local/bin/postman
 
+cat > /usr/local/bin/blender << 'BLENDERWRAPPER'
+#!/bin/bash
+if [ -x /usr/bin/blender ]; then
+    exec /usr/bin/blender "$@"
+else
+    zenity --error --title="HeavenOS" --text="Blender 3D Suite is not installed properly." --width=400
+fi
+BLENDERWRAPPER
+chmod +x /usr/local/bin/blender
+
+cat > /usr/local/bin/gimp << 'GIMPWRAPPER'
+#!/bin/bash
+if [ -x /usr/bin/gimp ]; then
+    exec /usr/bin/gimp "$@"
+else
+    zenity --error --title="HeavenOS" --text="GIMP Image Editor is not installed properly." --width=400
+fi
+GIMPWRAPPER
+chmod +x /usr/local/bin/gimp
+
+cat > /usr/local/bin/kdenlive << 'KDENLIVEWRAPPER'
+#!/bin/bash
+if [ -x /usr/bin/kdenlive ]; then
+    exec /usr/bin/kdenlive "$@"
+else
+    zenity --error --title="HeavenOS" --text="Kdenlive Video Editor is not installed properly." --width=400
+fi
+KDENLIVEWRAPPER
+chmod +x /usr/local/bin/kdenlive
+
+cat > /usr/local/bin/krita << 'KRITAWRAPPER'
+#!/bin/bash
+if [ -x /usr/bin/krita ]; then
+    exec /usr/bin/krita "$@"
+else
+    zenity --error --title="HeavenOS" --text="Krita Digital Painting is not installed properly." --width=400
+fi
+KRITAWRAPPER
+chmod +x /usr/local/bin/krita
+
+cat > /usr/local/bin/audacity << 'AUDACITYWRAPPER'
+#!/bin/bash
+if [ -x /usr/bin/audacity ]; then
+    exec /usr/bin/audacity "$@"
+else
+    zenity --error --title="HeavenOS" --text="Audacity Audio Editor is not installed properly." --width=400
+fi
+AUDACITYWRAPPER
+chmod +x /usr/local/bin/audacity
+
+cat > /usr/local/bin/vlc << 'VLCWRAPPER'
+#!/bin/bash
+if [ -x /usr/bin/vlc ]; then
+    exec /usr/bin/vlc "$@"
+else
+    zenity --error --title="HeavenOS" --text="VLC Media Player is not installed properly." --width=400
+fi
+VLCWRAPPER
+chmod +x /usr/local/bin/vlc
+
+cat > /usr/local/bin/filezilla << 'FILEZILLAWRAPPER'
+#!/bin/bash
+if [ -x /usr/bin/filezilla ]; then
+    exec /usr/bin/filezilla "$@"
+else
+    zenity --error --title="HeavenOS" --text="FileZilla FTP Client is not installed properly." --width=400
+fi
+FILEZILLAWRAPPER
+chmod +x /usr/local/bin/filezilla
+
 # ====================================================================
 #  DESKTOP SHORTCUTS (Full HeavenOS App Suite)
 # ====================================================================
@@ -1092,5 +1162,12 @@ chown abc:abc /usr/local/bin/discord 2>/dev/null || true
 chown abc:abc /usr/local/bin/code 2>/dev/null || true
 chown abc:abc /usr/local/bin/natron 2>/dev/null || true
 chown abc:abc /usr/local/bin/postman 2>/dev/null || true
+chown abc:abc /usr/local/bin/blender 2>/dev/null || true
+chown abc:abc /usr/local/bin/gimp 2>/dev/null || true
+chown abc:abc /usr/local/bin/kdenlive 2>/dev/null || true
+chown abc:abc /usr/local/bin/krita 2>/dev/null || true
+chown abc:abc /usr/local/bin/audacity 2>/dev/null || true
+chown abc:abc /usr/local/bin/vlc 2>/dev/null || true
+chown abc:abc /usr/local/bin/filezilla 2>/dev/null || true
 
 echo "[HeavenOS] macOS Sonoma UI + WhiteSur Theme + Plank Dock Registered!"
