@@ -571,17 +571,28 @@ if ! pgrep -f "heaven-uploader.py" > /dev/null; then
     python3 /usr/local/bin/heaven-uploader.py &
 fi
 
-# ---- App Fallback Wrappers -----------------------------------------
+# ---- App Fallback Wrappers & Touchscreen Support ---------------------
+cat > /usr/local/bin/onboard-keyboard << 'ONBOARDWRAPPER'
+#!/bin/bash
+if pgrep -x "onboard" > /dev/null; then
+    killall onboard 2>/dev/null || true
+else
+    onboard &
+fi
+ONBOARDWRAPPER
+chmod +x /usr/local/bin/onboard-keyboard
+
 cat > /usr/local/bin/google-chrome-stable << 'CHROMEWRAPPER'
 #!/bin/bash
+TOUCH_FLAGS="--enable-touch-drag-drop --enable-viewport --touch-events=enabled"
 if [ -x /usr/bin/google-chrome-stable ]; then
-    exec /usr/bin/google-chrome-stable "$@"
+    exec /usr/bin/google-chrome-stable $TOUCH_FLAGS "$@"
 elif [ -x /usr/bin/google-chrome ]; then
-    exec /usr/bin/google-chrome "$@"
+    exec /usr/bin/google-chrome $TOUCH_FLAGS "$@"
 elif [ -x /usr/bin/chromium-browser ]; then
-    exec /usr/bin/chromium-browser "$@"
+    exec /usr/bin/chromium-browser $TOUCH_FLAGS "$@"
 elif [ -x /usr/bin/chromium ]; then
-    exec /usr/bin/chromium "$@"
+    exec /usr/bin/chromium $TOUCH_FLAGS "$@"
 elif [ -x /usr/bin/firefox ]; then
     exec /usr/bin/firefox "$@"
 else
@@ -924,6 +935,20 @@ StartupNotify=true
 EOF
 chmod +x "$DESKTOP_DIR/Terminal.desktop"
 
+cat > "$DESKTOP_DIR/Touch Keyboard.desktop" << 'EOF'
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Touch Keyboard
+Comment=Toggle On-Screen Touch Keyboard
+Exec=onboard-keyboard
+Icon=input-keyboard
+Terminal=false
+Categories=Utility;Accessibility;
+StartupNotify=true
+EOF
+chmod +x "$DESKTOP_DIR/Touch Keyboard.desktop"
+
 # ====================================================================
 #  PLANK DOCK LAUNCHERS (macOS Dock)
 # ====================================================================
@@ -986,6 +1011,11 @@ EOF
 cat > "$PLANK_DIR/Terminal.dockitem" << 'EOF'
 [PlankDockItemPreferences]
 Launcher=file:///config/Desktop/Terminal.desktop
+EOF
+
+cat > "$PLANK_DIR/Keyboard.dockitem" << 'EOF'
+[PlankDockItemPreferences]
+Launcher=file:///config/Desktop/Touch%20Keyboard.desktop
 EOF
 
 
@@ -1157,6 +1187,7 @@ XMLEOF
 chown -R abc:abc /config/ 2>/dev/null || true
 chown abc:abc /usr/local/bin/apply-lotus-wallpaper.sh 2>/dev/null || true
 chown abc:abc /usr/local/bin/heaven-uploader.py 2>/dev/null || true
+chown abc:abc /usr/local/bin/onboard-keyboard 2>/dev/null || true
 chown abc:abc /usr/local/bin/google-chrome-stable 2>/dev/null || true
 chown abc:abc /usr/local/bin/discord 2>/dev/null || true
 chown abc:abc /usr/local/bin/code 2>/dev/null || true
@@ -1170,4 +1201,4 @@ chown abc:abc /usr/local/bin/audacity 2>/dev/null || true
 chown abc:abc /usr/local/bin/vlc 2>/dev/null || true
 chown abc:abc /usr/local/bin/filezilla 2>/dev/null || true
 
-echo "[HeavenOS] macOS Sonoma UI + WhiteSur Theme + Plank Dock Registered!"
+echo "[HeavenOS] macOS Sonoma UI + WhiteSur Theme + Plank Dock + Touchscreen Active!"

@@ -45,7 +45,7 @@ RUN mkdir -p /tmp/downloads && \
      git clone --depth 1 https://github.com/vinceliuice/WhiteSur-gtk-theme.git /tmp/WhiteSur-gtk 2>/dev/null || true & \
      git clone --depth 1 https://github.com/vinceliuice/WhiteSur-icon-theme.git /tmp/WhiteSur-icons 2>/dev/null || true) && wait
 
-# ---- 3. Base Utilities & GUI Components -------------------------
+# ---- 3. Base Utilities, Touchscreen & GUI Components --------------
 RUN apt-get update && apt-get install -y \
     gtk2-engines-murrine gtk2-engines-pixbuf plank \
     sound-theme-freedesktop ubuntu-sounds yaru-theme-sound \
@@ -53,6 +53,7 @@ RUN apt-get update && apt-get install -y \
     pulseaudio-utils alsa-utils sox vorbis-tools \
     python3 python3-pip python3-venv nodejs \
     zenity thunar xfce4-terminal \
+    onboard xinput xdotool libinput-tools \
     fonts-liberation libu2f-udev libvulkan1 xdg-utils libnspr4 libnss3 || apt-get install -fy
 
 # ---- 4. Creative & Multimedia App Suite (Blender, GIMP, Kdenlive, etc.) ----
