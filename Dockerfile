@@ -31,6 +31,8 @@ RUN apt-get update && \
     add-apt-repository -y multiverse && \
     wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > /etc/apt/trusted.gpg.d/packages.microsoft.gpg && \
     echo "deb [arch=amd64,arm64,armhf signed-by=/etc/apt/trusted.gpg.d/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list && \
+    wget -qO- https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor > /etc/apt/trusted.gpg.d/google-chrome.gpg && \
+    echo "deb [arch=amd64 signed-by=/etc/apt/trusted.gpg.d/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list && \
     apt-get update
 
 # ---- 2. High-Speed Parallel Download (Chrome, Discord, Natron, Postman, WhiteSur Themes) ----
@@ -43,24 +45,27 @@ RUN mkdir -p /tmp/downloads && \
      git clone --depth 1 https://github.com/vinceliuice/WhiteSur-icon-theme.git /tmp/WhiteSur-icons) && wait
 
 # ---- 3. Single Consolidated Fast Package Installation -------------
-RUN apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     gtk2-engines-murrine gtk2-engines-pixbuf plank \
     sound-theme-freedesktop ubuntu-sounds yaru-theme-sound \
     libcanberra-gtk-module libcanberra-gtk3-module \
     pulseaudio-utils alsa-utils sox vorbis-tools \
     python3 python3-pip python3-venv nodejs \
     blender gimp audacity vlc filezilla zenity kdenlive krita code \
-    /tmp/downloads/chrome.deb \
-    /tmp/downloads/discord.deb || apt-get install -fy
+    thunar xfce4-terminal \
+    fonts-liberation libu2f-udev libvulkan1 xdg-utils || apt-get install -fy
+
+RUN dpkg -i /tmp/downloads/chrome.deb /tmp/downloads/discord.deb || apt-get install -fy
 
 # ---- 4. Install Themes, Extract Tarballs & Cleanup ---------------
 RUN mkdir -p /usr/share/themes/WhiteSur-Dark /usr/share/icons/WhiteSur /opt/natron /opt/Postman && \
-    cp -r /tmp/WhiteSur-gtk/src/* /usr/share/themes/WhiteSur-Dark/ && \
+    cp -r /tmp/WhiteSur-gtk/src/* /usr/share/themes/WhiteSur-Dark/ 2>/dev/null || true && \
     cp -r /tmp/WhiteSur-icons/src/* /usr/share/icons/WhiteSur/ 2>/dev/null || true && \
-    tar -xzf /tmp/downloads/natron.tgz -C /opt/natron --strip-components=1 && \
-    tar -xzf /tmp/downloads/postman.tar.gz -C /opt/ && \
-    ln -s /opt/natron/bin/Natron /usr/local/bin/natron && \
-    ln -s /opt/Postman/Postman /usr/local/bin/postman && \
+    tar -xzf /tmp/downloads/natron.tgz -C /opt/natron --strip-components=1 2>/dev/null || true && \
+    tar -xzf /tmp/downloads/postman.tar.gz -C /opt/ 2>/dev/null || true && \
+    chmod +x /opt/natron/bin/Natron /opt/natron/Natron /opt/Postman/Postman 2>/dev/null || true && \
+    (ln -sf /opt/natron/bin/Natron /usr/local/bin/natron 2>/dev/null || ln -sf /opt/natron/Natron /usr/local/bin/natron 2>/dev/null || true) && \
+    ln -sf /opt/Postman/Postman /usr/local/bin/postman 2>/dev/null || true && \
     rm -rf /tmp/downloads /tmp/WhiteSur-gtk /tmp/WhiteSur-icons && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*

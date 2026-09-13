@@ -571,6 +571,74 @@ if ! pgrep -f "heaven-uploader.py" > /dev/null; then
     python3 /usr/local/bin/heaven-uploader.py &
 fi
 
+# ---- App Fallback Wrappers -----------------------------------------
+cat > /usr/local/bin/google-chrome-stable << 'CHROMEWRAPPER'
+#!/bin/bash
+if [ -x /usr/bin/google-chrome-stable ]; then
+    exec /usr/bin/google-chrome-stable "$@"
+elif [ -x /usr/bin/google-chrome ]; then
+    exec /usr/bin/google-chrome "$@"
+elif [ -x /usr/bin/chromium-browser ]; then
+    exec /usr/bin/chromium-browser "$@"
+elif [ -x /usr/bin/chromium ]; then
+    exec /usr/bin/chromium "$@"
+elif [ -x /usr/bin/firefox ]; then
+    exec /usr/bin/firefox "$@"
+else
+    zenity --error --title="HeavenOS" --text="Google Chrome binary not found in /usr/bin/google-chrome-stable.\nPlease rebuild the Docker image." --width=400
+fi
+CHROMEWRAPPER
+chmod +x /usr/local/bin/google-chrome-stable
+ln -sf /usr/local/bin/google-chrome-stable /usr/local/bin/google-chrome
+
+cat > /usr/local/bin/discord << 'DISCORDWRAPPER'
+#!/bin/bash
+if [ -x /usr/bin/discord ]; then
+    exec /usr/bin/discord --no-sandbox "$@"
+elif [ -x /usr/share/discord/Discord ]; then
+    exec /usr/share/discord/Discord --no-sandbox "$@"
+else
+    zenity --error --title="HeavenOS" --text="Discord is not installed properly." --width=400
+fi
+DISCORDWRAPPER
+chmod +x /usr/local/bin/discord
+
+cat > /usr/local/bin/code << 'CODEWRAPPER'
+#!/bin/bash
+if [ -x /usr/bin/code ]; then
+    exec /usr/bin/code --no-sandbox "$@"
+else
+    zenity --error --title="HeavenOS" --text="VS Code is not installed properly." --width=400
+fi
+CODEWRAPPER
+chmod +x /usr/local/bin/code
+
+cat > /usr/local/bin/natron << 'NATRONWRAPPER'
+#!/bin/bash
+if [ -x /opt/natron/bin/Natron ]; then
+    exec /opt/natron/bin/Natron "$@"
+elif [ -x /opt/natron/Natron ]; then
+    exec /opt/natron/Natron "$@"
+elif [ -x /usr/bin/natron ]; then
+    exec /usr/bin/natron "$@"
+else
+    zenity --error --title="HeavenOS" --text="Natron VFX is not installed properly." --width=400
+fi
+NATRONWRAPPER
+chmod +x /usr/local/bin/natron
+
+cat > /usr/local/bin/postman << 'POSTMANWRAPPER'
+#!/bin/bash
+if [ -x /opt/Postman/Postman ]; then
+    exec /opt/Postman/Postman "$@"
+elif [ -x /usr/bin/postman ]; then
+    exec /usr/bin/postman "$@"
+else
+    zenity --error --title="HeavenOS" --text="Postman Studio is not installed properly." --width=400
+fi
+POSTMANWRAPPER
+chmod +x /usr/local/bin/postman
+
 # ====================================================================
 #  DESKTOP SHORTCUTS (Full HeavenOS App Suite)
 # ====================================================================
@@ -791,7 +859,7 @@ chmod +x "$DESKTOP_DIR/Terminal.desktop"
 # ====================================================================
 cat > "$PLANK_DIR/UploadFiles.dockitem" << 'EOF'
 [PlankDockItemPreferences]
-Launcher=file:///config/Desktop/Upload Files.desktop
+Launcher=file:///config/Desktop/Upload%20Files.desktop
 EOF
 
 cat > "$PLANK_DIR/Chrome.dockitem" << 'EOF'
@@ -1017,7 +1085,12 @@ XMLEOF
 
 # ---- Ownership fix -----------------------------------------------
 chown -R abc:abc /config/ 2>/dev/null || true
-chown abc:abc /usr/local/bin/apply-lotus-wallpaper.sh
-chown abc:abc /usr/local/bin/heaven-uploader.py
+chown abc:abc /usr/local/bin/apply-lotus-wallpaper.sh 2>/dev/null || true
+chown abc:abc /usr/local/bin/heaven-uploader.py 2>/dev/null || true
+chown abc:abc /usr/local/bin/google-chrome-stable 2>/dev/null || true
+chown abc:abc /usr/local/bin/discord 2>/dev/null || true
+chown abc:abc /usr/local/bin/code 2>/dev/null || true
+chown abc:abc /usr/local/bin/natron 2>/dev/null || true
+chown abc:abc /usr/local/bin/postman 2>/dev/null || true
 
 echo "[HeavenOS] macOS Sonoma UI + WhiteSur Theme + Plank Dock Registered!"
