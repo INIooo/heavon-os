@@ -643,72 +643,6 @@ fi
 CODEWRAPPER
 chmod +x /usr/local/bin/code
 
-cat > /usr/local/bin/natron << 'NATRONWRAPPER'
-#!/bin/bash
-if [ -x /opt/natron/bin/Natron ]; then
-    exec /opt/natron/bin/Natron "$@"
-elif [ -x /opt/natron/Natron ]; then
-    exec /opt/natron/Natron "$@"
-elif [ -x /usr/bin/natron ]; then
-    exec /usr/bin/natron "$@"
-else
-    zenity --error --title="HeavenOS" --text="Natron VFX is not installed properly." --width=400
-fi
-NATRONWRAPPER
-chmod +x /usr/local/bin/natron
-
-cat > /usr/local/bin/postman << 'POSTMANWRAPPER'
-#!/bin/bash
-if [ -x /opt/Postman/Postman ]; then
-    exec /opt/Postman/Postman "$@"
-elif [ -x /usr/bin/postman ]; then
-    exec /usr/bin/postman "$@"
-else
-    zenity --error --title="HeavenOS" --text="Postman Studio is not installed properly." --width=400
-fi
-POSTMANWRAPPER
-chmod +x /usr/local/bin/postman
-
-cat > /usr/local/bin/blender << 'BLENDERWRAPPER'
-#!/bin/bash
-if [ -x /usr/bin/blender ]; then
-    exec /usr/bin/blender "$@"
-else
-    zenity --error --title="HeavenOS" --text="Blender 3D Suite is not installed properly." --width=400
-fi
-BLENDERWRAPPER
-chmod +x /usr/local/bin/blender
-
-cat > /usr/local/bin/gimp << 'GIMPWRAPPER'
-#!/bin/bash
-if [ -x /usr/bin/gimp ]; then
-    exec /usr/bin/gimp "$@"
-else
-    zenity --error --title="HeavenOS" --text="GIMP Image Editor is not installed properly." --width=400
-fi
-GIMPWRAPPER
-chmod +x /usr/local/bin/gimp
-
-cat > /usr/local/bin/kdenlive << 'KDENLIVEWRAPPER'
-#!/bin/bash
-if [ -x /usr/bin/kdenlive ]; then
-    exec /usr/bin/kdenlive "$@"
-else
-    zenity --error --title="HeavenOS" --text="Kdenlive Video Editor is not installed properly." --width=400
-fi
-KDENLIVEWRAPPER
-chmod +x /usr/local/bin/kdenlive
-
-cat > /usr/local/bin/krita << 'KRITAWRAPPER'
-#!/bin/bash
-if [ -x /usr/bin/krita ]; then
-    exec /usr/bin/krita "$@"
-else
-    zenity --error --title="HeavenOS" --text="Krita Digital Painting is not installed properly." --width=400
-fi
-KRITAWRAPPER
-chmod +x /usr/local/bin/krita
-
 cat > /usr/local/bin/audacity << 'AUDACITYWRAPPER'
 #!/bin/bash
 if [ -x /usr/bin/audacity ]; then
@@ -914,77 +848,6 @@ StartupNotify=true
 EOF
 chmod +x "$DESKTOP_DIR/VSCode.desktop"
 
-cat > "$DESKTOP_DIR/Kdenlive.desktop" << 'EOF'
-[Desktop Entry]
-Version=1.0
-Type=Application
-Name=Kdenlive
-Comment=Non-Linear Video Editor
-Exec=kdenlive
-Icon=kdenlive
-Terminal=false
-Categories=AudioVideo;Video;VideoEditing;
-StartupNotify=true
-EOF
-chmod +x "$DESKTOP_DIR/Kdenlive.desktop"
-
-cat > "$DESKTOP_DIR/Krita.desktop" << 'EOF'
-[Desktop Entry]
-Version=1.0
-Type=Application
-Name=Krita
-Comment=Digital Painting & Illustration
-Exec=krita
-Icon=krita
-Terminal=false
-Categories=Graphics;2DGraphics;RasterGraphics;
-StartupNotify=true
-EOF
-chmod +x "$DESKTOP_DIR/Krita.desktop"
-
-cat > "$DESKTOP_DIR/Natron.desktop" << 'EOF'
-[Desktop Entry]
-Version=1.0
-Type=Application
-Name=Natron
-Comment=Node-based VFX Compositing Software
-Exec=natron
-Icon=natron
-Terminal=false
-Categories=Graphics;Video;
-StartupNotify=true
-EOF
-chmod +x "$DESKTOP_DIR/Natron.desktop"
-
-cat > "$DESKTOP_DIR/Postman.desktop" << 'EOF'
-[Desktop Entry]
-Version=1.0
-Type=Application
-Name=Postman
-Comment=API Development & Testing Studio
-Exec=postman
-Icon=postman
-Terminal=false
-Categories=Development;IDE;
-StartupNotify=true
-EOF
-chmod +x "$DESKTOP_DIR/Postman.desktop"
-
-cat > "$DESKTOP_DIR/Blender.desktop" << 'EOF'
-
-[Desktop Entry]
-Version=1.0
-Type=Application
-Name=Blender
-Comment=3D Creation Suite
-Exec=blender
-Icon=blender
-Terminal=false
-Categories=Graphics;3DGraphics;
-StartupNotify=true
-EOF
-chmod +x "$DESKTOP_DIR/Blender.desktop"
-
 cat > "$DESKTOP_DIR/GIMP.desktop" << 'EOF'
 [Desktop Entry]
 Version=1.0
@@ -1163,32 +1026,6 @@ cat > "$PLANK_DIR/VSCode.dockitem" << 'EOF'
 [PlankDockItemPreferences]
 Launcher=file:///config/Desktop/VSCode.desktop
 EOF
-
-cat > "$PLANK_DIR/Postman.dockitem" << 'EOF'
-[PlankDockItemPreferences]
-Launcher=file:///config/Desktop/Postman.desktop
-EOF
-
-cat > "$PLANK_DIR/Kdenlive.dockitem" << 'EOF'
-[PlankDockItemPreferences]
-Launcher=file:///config/Desktop/Kdenlive.desktop
-EOF
-
-cat > "$PLANK_DIR/Krita.dockitem" << 'EOF'
-[PlankDockItemPreferences]
-Launcher=file:///config/Desktop/Krita.desktop
-EOF
-
-cat > "$PLANK_DIR/Natron.dockitem" << 'EOF'
-[PlankDockItemPreferences]
-Launcher=file:///config/Desktop/Natron.desktop
-EOF
-
-cat > "$PLANK_DIR/Blender.dockitem" << 'EOF'
-[PlankDockItemPreferences]
-Launcher=file:///config/Desktop/Blender.desktop
-EOF
-
 
 cat > "$PLANK_DIR/GIMP.dockitem" << 'EOF'
 [PlankDockItemPreferences]
@@ -1435,12 +1272,6 @@ chown abc:abc /usr/local/bin/onboard-keyboard 2>/dev/null || true
 chown abc:abc /usr/local/bin/google-chrome-stable 2>/dev/null || true
 chown abc:abc /usr/local/bin/discord 2>/dev/null || true
 chown abc:abc /usr/local/bin/code 2>/dev/null || true
-chown abc:abc /usr/local/bin/natron 2>/dev/null || true
-chown abc:abc /usr/local/bin/postman 2>/dev/null || true
-chown abc:abc /usr/local/bin/blender 2>/dev/null || true
-chown abc:abc /usr/local/bin/gimp 2>/dev/null || true
-chown abc:abc /usr/local/bin/kdenlive 2>/dev/null || true
-chown abc:abc /usr/local/bin/krita 2>/dev/null || true
 chown abc:abc /usr/local/bin/audacity 2>/dev/null || true
 chown abc:abc /usr/local/bin/vlc 2>/dev/null || true
 chown abc:abc /usr/local/bin/filezilla 2>/dev/null || true

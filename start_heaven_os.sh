@@ -16,13 +16,15 @@ if ! command -v docker &> /dev/null; then
 fi
 
 # ---- STEP 2: Build Image -------------------------------------------
-echo "[→] Cleaning old container & building fresh HeavenOS Docker image..."
+echo "[→] Cleaning old containers, docker build cache & freeing disk space..."
 docker rm -f heaven-os 2>/dev/null || true
 docker rmi heaven-os 2>/dev/null || true
+docker system prune -af --volumes 2>/dev/null || true
+docker builder prune -af 2>/dev/null || true
 export DOCKER_BUILDKIT=1
 docker build --no-cache -t heaven-os .
 if [ $? -ne 0 ]; then
-    echo "ERROR: Build fail! Check karo Dockerfile."
+    echo "ERROR: Build fail! Check disk space with 'df -h'."
     exit 1
 fi
 echo "[✓] Image ready!"

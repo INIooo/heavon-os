@@ -14,7 +14,7 @@ HeavenOS Features:
 - Theme: macOS Sonoma Dark UI (WhiteSur GTK & Icons, Traffic Light Window Controls)
 - Dock: Animated Plank Dock at bottom with Multi-OS Runners
 - Wallpaper: Permanent Lotus Wallpaper (Default system wallpapers purged)
-- Apps: Google Chrome, Discord, VS Code, Postman, Krita, Natron, Kdenlive, Blender, GIMP, Audacity, VLC, FileZilla
+- Apps: Google Chrome, Discord, VS Code, GIMP, Audacity, VLC, FileZilla
 - File Uploader & Control Center: Drag & Drop web portal on Desktop (Port 8889)
 
 --------------------------------------------------------------------
@@ -70,5 +70,13 @@ STEP 5: HEAVENOS BAND / SHUTDOWN KAISE KAREIN
 2. Container stop & delete karne ke liye command chalao:
    bash stop_heaven_os.sh
    (ya: docker rm -f heaven-os)
+
+--------------------------------------------------------------------
+TROUBLESHOOTING: "NO SPACE LEFT ON DEVICE" ERROR
+--------------------------------------------------------------------
+Agar Cloud Shell par disk space error aaye, to pehle ye run karo:
+   docker system prune -af --volumes ; docker builder prune -af
+Phir wapis build chalao:
+   bash start_heaven_os.sh
 
 ====================================================================
