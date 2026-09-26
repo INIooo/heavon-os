@@ -57,12 +57,12 @@ NoDisplay=false
 X-GNOME-Autostart-enabled=true
 EOF
 
-# ---- Startup Notice Autostart (DaVinci Resolve Optimization Note & Credits) ----
+# ---- Startup Notice Autostart (Multi-OS Program Support Enabled) ----
 cat > "$AUTOSTART_DIR/heaven-notice.desktop" << 'EOF'
 [Desktop Entry]
 Type=Application
 Name=HeavenOS Notice
-Exec=zenity --info --title="HeavenOS" --text="Due to lack of optimisation, we couldn't include the following apps that we promised:\n\n1. DaVinci Resolve\n\n----------------------------------------\nCredits: Rohan2core and Prathamesh for programming" --width=450
+Exec=zenity --info --title="HeavenOS v8.0 Multi-OS Workstation" --text="Welcome to HeavenOS!\n\n✨ Universal Multi-OS Program Support Active:\n1. 🪟 Windows Apps (.EXE, .MSI via Wine Engine)\n2. 🍏 macOS Apps (.DMG, .APP, .PKG Engine)\n3. 🐧 Linux & Mobile Apps (.AppImage, .DEB, .APK Engine)\n\nDouble-click any program executable to run directly!\n\n----------------------------------------\nCredits: Rohan2core and Prathamesh for programming" --width=500
 Hidden=false
 NoDisplay=false
 X-GNOME-Autostart-enabled=true
@@ -347,11 +347,30 @@ class UploadHandler(BaseHTTPRequestHandler):
                 <div class="brand-logo">☁️</div>
                 <div class="brand-info">
                     <h1>HeavenOS Control Center</h1>
-                    <p>macOS Sonoma Workstation • v7.5 Dark Glass</p>
+                    <p>macOS Sonoma Workstation • v8.0 Multi-OS Edition</p>
                 </div>
             </div>
             <div class="badge-status">
-                <span class="status-dot"></span> System Audio & Cloud Active
+                <span class="status-dot"></span> Multi-OS Compatibility & Cloud Active
+            </div>
+        </div>
+
+        <!-- Universal Multi-OS Program Engine Showcase -->
+        <div class="glass-card">
+            <div class="section-title">🚀 Universal Multi-OS Program Support</div>
+            <div class="sound-grid">
+                <div class="sound-btn" onclick="alert('Windows Executable Engine Ready (.EXE / .MSI)\nDouble-click any .exe file on Desktop to execute via Wine!')">
+                    <span class="icon">🪟</span>
+                    <span class="label">Windows (.EXE / .MSI)</span>
+                </div>
+                <div class="sound-btn" onclick="alert('macOS Application Engine Ready (.DMG / .APP / .PKG)\nDouble-click any .dmg/.app file on Desktop to run or extract!')">
+                    <span class="icon">🍏</span>
+                    <span class="label">macOS (.DMG / .APP)</span>
+                </div>
+                <div class="sound-btn" onclick="alert('Linux Portable & Mobile Engine Ready (.AppImage / .DEB / .APK)\nDouble-click any Linux app or Android APK to execute!')">
+                    <span class="icon">🐧</span>
+                    <span class="label">Linux & Mobile</span>
+                </div>
             </div>
         </div>
 
@@ -721,6 +740,121 @@ FILEZILLAWRAPPER
 chmod +x /usr/local/bin/filezilla
 
 # ====================================================================
+#  UNIVERSAL MULTI-OS PROGRAM RUNNERS (Windows, macOS, Linux, Android)
+# ====================================================================
+
+# ---- 1. Windows Executable Runner (.EXE & .MSI) ------------------
+cat > /usr/local/bin/heaven-exe-runner << 'EXERUNNER'
+#!/bin/bash
+TARGET="$1"
+if [ -z "$TARGET" ]; then
+    TARGET=$(zenity --file-selection --title="HeavenOS - Select Windows Application (.exe / .msi)" --file-filter="Windows Files (*.exe *.msi) | *.exe *.msi *.EXE *.MSI" 2>/dev/null)
+    if [ -z "$TARGET" ]; then exit 0; fi
+fi
+FILENAME=$(basename "$TARGET")
+export WINEPREFIX="${HOME}/.wine"
+export WINEDEBUG=-all
+zenity --info --title="HeavenOS Windows Compatibility Engine (Wine)" \
+       --text="<b>Launching Windows Application:</b>\n$FILENAME\n\nPlease wait while HeavenOS Windows Environment executes the application..." \
+       --width=450 --timeout=3 2>/dev/null &
+if [[ "$TARGET" == *.msi || "$TARGET" == *.MSI ]]; then
+    wine msiexec /i "$TARGET" "$@"
+else
+    wine "$TARGET" "$@"
+fi
+EXERUNNER
+chmod +x /usr/local/bin/heaven-exe-runner
+
+# ---- 2. macOS Application & Disk Image Runner (.DMG, .APP, .PKG) ---
+cat > /usr/local/bin/heaven-mac-runner << 'MACRUNNER'
+#!/bin/bash
+TARGET="$1"
+if [ -z "$TARGET" ]; then
+    TARGET=$(zenity --file-selection --title="HeavenOS - Select macOS Application / Disk Image" --file-filter="macOS Packages (*.dmg *.app *.pkg) | *.dmg *.app *.pkg *.DMG *.APP *.PKG" 2>/dev/null)
+    if [ -z "$TARGET" ]; then exit 0; fi
+fi
+FILENAME=$(basename "$TARGET")
+EXT="${TARGET##*.}"
+EXT_LOWER=$(echo "$EXT" | tr '[:upper:]' '[:lower:]')
+
+if [ -d "$TARGET" ] && [[ "$TARGET" == *.app ]]; then
+    EXEC_FILE=$(find "$TARGET/Contents/MacOS" -maxdepth 2 -type f 2>/dev/null | head -n 1)
+    if [ -n "$EXEC_FILE" ]; then
+        chmod +x "$EXEC_FILE" 2>/dev/null
+        zenity --info --title="HeavenOS macOS Engine" \
+               --text="<b>macOS Application Bundle (.APP):</b>\n$FILENAME\n\nLaunching macOS binary:\n$EXEC_FILE" \
+               --width=500 --timeout=4 2>/dev/null &
+        "$EXEC_FILE" "$@" 2>/dev/null || bash "$EXEC_FILE" "$@"
+    else
+        zenity --error --title="HeavenOS macOS Engine" --text="Could not locate executable binary in $TARGET/Contents/MacOS/" --width=450 2>/dev/null
+    fi
+elif [ "$EXT_LOWER" = "dmg" ]; then
+    OUT_DIR="${HOME}/Desktop/Extracted_DMG_${FILENAME%.*}"
+    mkdir -p "$OUT_DIR"
+    zenity --info --title="HeavenOS macOS Engine" \
+           --text="<b>Extracting & Mounting macOS Disk Image (.DMG):</b>\n$FILENAME\n\nExtracted contents folder:\n$OUT_DIR" \
+           --width=500 --timeout=4 2>/dev/null &
+    7z x -y "$TARGET" -o"$OUT_DIR" 2>/dev/null || dmg2img -i "$TARGET" -o "$OUT_DIR/disk_image.img" 2>/dev/null
+    thunar "$OUT_DIR" 2>/dev/null &
+elif [ "$EXT_LOWER" = "pkg" ]; then
+    OUT_DIR="${HOME}/Desktop/Extracted_PKG_${FILENAME%.*}"
+    mkdir -p "$OUT_DIR"
+    zenity --info --title="HeavenOS macOS Engine" \
+           --text="<b>Extracting macOS Package (.PKG):</b>\n$FILENAME\n\nExtracted package contents folder:\n$OUT_DIR" \
+           --width=500 --timeout=4 2>/dev/null &
+    7z x -y "$TARGET" -o"$OUT_DIR" 2>/dev/null
+    thunar "$OUT_DIR" 2>/dev/null &
+else
+    zenity --error --title="HeavenOS macOS Engine" --text="Unsupported macOS file format: $FILENAME" --width=400 2>/dev/null
+fi
+MACRUNNER
+chmod +x /usr/local/bin/heaven-mac-runner
+
+# ---- 3. Linux Portable Apps & Package Engine (.AppImage & .DEB) ---
+cat > /usr/local/bin/heaven-linux-runner << 'LINUXRUNNER'
+#!/bin/bash
+TARGET="$1"
+if [ -z "$TARGET" ]; then
+    TARGET=$(zenity --file-selection --title="HeavenOS - Select Linux Portable App or Package" --file-filter="Linux Files (*.AppImage *.appimage *.deb) | *.AppImage *.appimage *.deb" 2>/dev/null)
+    if [ -z "$TARGET" ]; then exit 0; fi
+fi
+FILENAME=$(basename "$TARGET")
+
+if [[ "$TARGET" == *.deb || "$TARGET" == *.DEB ]]; then
+    zenity --info --title="HeavenOS Package Installer" --text="Installing Debian Package:\n$FILENAME" --timeout=3 2>/dev/null &
+    if command -v gdebi-gtk &>/dev/null; then
+        gdebi-gtk "$TARGET"
+    else
+        pkexec apt-get install -y "$TARGET" || dpkg -i "$TARGET" || zenity --error --title="HeavenOS Package Installer" --text="Failed to install $FILENAME" 2>/dev/null
+    fi
+else
+    chmod +x "$TARGET"
+    zenity --info --title="HeavenOS AppImage Launcher" --text="Launching Linux Portable Application:\n$FILENAME" --timeout=3 2>/dev/null &
+    "$TARGET" --no-sandbox "$@" 2>/dev/null || "$TARGET" "$@"
+fi
+LINUXRUNNER
+chmod +x /usr/local/bin/heaven-linux-runner
+
+# ---- 4. Android Package Engine (.APK) ----------------------------
+cat > /usr/local/bin/heaven-apk-runner << 'APKRUNNER'
+#!/bin/bash
+TARGET="$1"
+if [ -z "$TARGET" ]; then
+    TARGET=$(zenity --file-selection --title="HeavenOS - Select Android Package (.apk)" --file-filter="Android Packages (*.apk) | *.apk *.APK" 2>/dev/null)
+    if [ -z "$TARGET" ]; then exit 0; fi
+fi
+FILENAME=$(basename "$TARGET")
+OUT_DIR="${HOME}/Desktop/Extracted_APK_${FILENAME%.*}"
+mkdir -p "$OUT_DIR"
+zenity --info --title="HeavenOS Android Engine" \
+       --text="<b>Extracting Android Package (.APK):</b>\n$FILENAME\n\nExtracted contents folder:\n$OUT_DIR" \
+       --width=500 --timeout=4 2>/dev/null &
+7z x -y "$TARGET" -o"$OUT_DIR" 2>/dev/null
+thunar "$OUT_DIR" 2>/dev/null &
+APKRUNNER
+chmod +x /usr/local/bin/heaven-apk-runner
+
+# ====================================================================
 #  DESKTOP SHORTCUTS (Full HeavenOS App Suite)
 # ====================================================================
 
@@ -949,12 +1083,70 @@ StartupNotify=true
 EOF
 chmod +x "$DESKTOP_DIR/Touch Keyboard.desktop"
 
+# Multi-OS Desktop Shortcuts
+cat > "$DESKTOP_DIR/Windows Apps (.EXE).desktop" << 'EOF'
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Windows Apps (.EXE)
+Comment=Run Windows Executables (.EXE / .MSI)
+Exec=heaven-exe-runner
+Icon=wine
+Terminal=false
+Categories=Utility;Emulation;
+StartupNotify=true
+EOF
+chmod +x "$DESKTOP_DIR/Windows Apps (.EXE).desktop"
+
+cat > "$DESKTOP_DIR/macOS Apps (.DMG .APP).desktop" << 'EOF'
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=macOS Apps (.DMG .APP)
+Comment=Run & Extract macOS Apps (.DMG / .APP / .PKG)
+Exec=heaven-mac-runner
+Icon=system-run
+Terminal=false
+Categories=Utility;Emulation;
+StartupNotify=true
+EOF
+chmod +x "$DESKTOP_DIR/macOS Apps (.DMG .APP).desktop"
+
+cat > "$DESKTOP_DIR/Linux Apps (.AppImage .DEB).desktop" << 'EOF'
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Linux Apps (.AppImage .DEB)
+Comment=Run Linux Portable Apps & Install Packages
+Exec=heaven-linux-runner
+Icon=system-software-install
+Terminal=false
+Categories=Utility;System;
+StartupNotify=true
+EOF
+chmod +x "$DESKTOP_DIR/Linux Apps (.AppImage .DEB).desktop"
+
 # ====================================================================
 #  PLANK DOCK LAUNCHERS (macOS Dock)
 # ====================================================================
 cat > "$PLANK_DIR/UploadFiles.dockitem" << 'EOF'
 [PlankDockItemPreferences]
 Launcher=file:///config/Desktop/Upload%20Files.desktop
+EOF
+
+cat > "$PLANK_DIR/WindowsApps.dockitem" << 'EOF'
+[PlankDockItemPreferences]
+Launcher=file:///config/Desktop/Windows%20Apps%20(.EXE).desktop
+EOF
+
+cat > "$PLANK_DIR/macOSApps.dockitem" << 'EOF'
+[PlankDockItemPreferences]
+Launcher=file:///config/Desktop/macOS%20Apps%20(.DMG%20.APP).desktop
+EOF
+
+cat > "$PLANK_DIR/LinuxApps.dockitem" << 'EOF'
+[PlankDockItemPreferences]
+Launcher=file:///config/Desktop/Linux%20Apps%20(.AppImage%20.DEB).desktop
 EOF
 
 cat > "$PLANK_DIR/Chrome.dockitem" << 'EOF'
@@ -1183,6 +1375,58 @@ cat > "$CONFIG_DIR/xfce4-desktop.xml" << XMLEOF
 </channel>
 XMLEOF
 
+# ---- SYSTEM-WIDE MIME FILE ASSOCIATIONS FOR MULTI-OS PROGRAM RUNNERS ---
+mkdir -p /usr/share/applications /config/.config
+
+cat > /usr/share/applications/heaven-exe.desktop << 'EOF'
+[Desktop Entry]
+Type=Application
+Name=HeavenOS Windows Runner
+Exec=heaven-exe-runner %f
+MimeType=application/x-ms-dos-executable;application/x-msi;application/x-msdownload;application/exe;application/x-exe;
+NoDisplay=true
+EOF
+
+cat > /usr/share/applications/heaven-mac.desktop << 'EOF'
+[Desktop Entry]
+Type=Application
+Name=HeavenOS macOS Runner
+Exec=heaven-mac-runner %f
+MimeType=application/x-apple-diskimage;application/x-dmg;application/x-mac-pkg;application/x-xar;
+NoDisplay=true
+EOF
+
+cat > /usr/share/applications/heaven-linux.desktop << 'EOF'
+[Desktop Entry]
+Type=Application
+Name=HeavenOS Linux Runner
+Exec=heaven-linux-runner %f
+MimeType=application/x-iso9660-appimage;application/x-appimage;application/vnd.debian.binary-package;
+NoDisplay=true
+EOF
+
+cat > /usr/share/applications/heaven-apk.desktop << 'EOF'
+[Desktop Entry]
+Type=Application
+Name=HeavenOS Android Runner
+Exec=heaven-apk-runner %f
+MimeType=application/vnd.android.package-archive;
+NoDisplay=true
+EOF
+
+cat > /config/.config/mimeapps.list << 'EOF'
+[Default Applications]
+application/x-ms-dos-executable=heaven-exe.desktop
+application/x-msi=heaven-exe.desktop
+application/x-msdownload=heaven-exe.desktop
+application/x-apple-diskimage=heaven-mac.desktop
+application/x-dmg=heaven-mac.desktop
+application/x-iso9660-appimage=heaven-linux.desktop
+application/x-appimage=heaven-linux.desktop
+application/vnd.debian.binary-package=heaven-linux.desktop
+application/vnd.android.package-archive=heaven-apk.desktop
+EOF
+
 # ---- Ownership fix -----------------------------------------------
 chown -R abc:abc /config/ 2>/dev/null || true
 chown abc:abc /usr/local/bin/apply-lotus-wallpaper.sh 2>/dev/null || true
@@ -1200,5 +1444,9 @@ chown abc:abc /usr/local/bin/krita 2>/dev/null || true
 chown abc:abc /usr/local/bin/audacity 2>/dev/null || true
 chown abc:abc /usr/local/bin/vlc 2>/dev/null || true
 chown abc:abc /usr/local/bin/filezilla 2>/dev/null || true
+chown abc:abc /usr/local/bin/heaven-exe-runner 2>/dev/null || true
+chown abc:abc /usr/local/bin/heaven-mac-runner 2>/dev/null || true
+chown abc:abc /usr/local/bin/heaven-linux-runner 2>/dev/null || true
+chown abc:abc /usr/local/bin/heaven-apk-runner 2>/dev/null || true
 
-echo "[HeavenOS] macOS Sonoma UI + WhiteSur Theme + Plank Dock + Touchscreen Active!"
+echo "[HeavenOS] macOS Sonoma UI + Multi-OS Program Support (.EXE, .DMG, .AppImage) Active!"

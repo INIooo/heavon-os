@@ -60,7 +60,12 @@ RUN apt-get update && apt-get install -y \
 RUN apt-get update && apt-get install -y \
     blender gimp audacity vlc filezilla kdenlive krita code || apt-get install -fy
 
-# ---- 5. Install Local Deb Packages (Chrome & Discord) -------------
+# ---- 5. Multi-OS Program Compatibility Engines (Windows .EXE, macOS .DMG/.APP, Linux .AppImage/.DEB) ----
+RUN apt-get update && apt-get install -y \
+    wine wine64 winetricks cabextract \
+    p7zip-full p7zip-rar dmg2img hfsutils hfsprogs gdebi-core unzip || apt-get install -fy
+
+# ---- 6. Install Local Deb Packages (Chrome & Discord) -------------
 RUN dpkg -i /tmp/downloads/chrome.deb /tmp/downloads/discord.deb || apt-get install -fy
 
 # ---- 4. Install Themes, Extract Tarballs & Cleanup ---------------
