@@ -14,7 +14,7 @@ HeavenOS Features:
 - Theme: macOS Sonoma Dark UI (WhiteSur GTK & Icons, Traffic Light Window Controls)
 - Dock: Animated Plank Dock at bottom with Multi-OS Runners
 - Wallpaper: Permanent Lotus Wallpaper (Default system wallpapers purged)
-- Apps: Google Chrome, Discord, VS Code, GIMP, Audacity, VLC, FileZilla
+- Apps: Google Chrome, Discord, VS Code, GIMP, Audacity, VLC, FileZilla, Blender 3D, Krita, Kdenlive
 - File Uploader & Control Center: Drag & Drop web portal on Desktop (Port 8889)
 
 --------------------------------------------------------------------

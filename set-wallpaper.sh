@@ -788,275 +788,429 @@ thunar "$OUT_DIR" 2>/dev/null &
 APKRUNNER
 chmod +x /usr/local/bin/heaven-apk-runner
 
-# ====================================================================
-#  HEAVENOS ICON REPAIR & FREEDESKTOP SYSTEM INDEXING
-# ====================================================================
-echo "[HeavenOS] Fixing and indexing application desktop icons..."
-
-# Ensure system icon directories exist
-mkdir -p /usr/share/pixmaps /usr/share/icons/hicolor/48x48/apps /usr/share/icons/hicolor/scalable/apps /usr/share/icons/WhiteSur/apps
-
-# Copy/Symlink application icons into system pixmaps and hicolor directories
-# Google Chrome
-if [ -f /opt/google/chrome/product_logo_48.png ]; then
-    cp -f /opt/google/chrome/product_logo_48.png /usr/share/pixmaps/google-chrome.png 2>/dev/null || true
-    cp -f /opt/google/chrome/product_logo_48.png /usr/share/icons/hicolor/48x48/apps/google-chrome.png 2>/dev/null || true
-elif [ -f /usr/share/icons/hicolor/48x48/apps/google-chrome.png ]; then
-    cp -f /usr/share/icons/hicolor/48x48/apps/google-chrome.png /usr/share/pixmaps/google-chrome.png 2>/dev/null || true
+# ---- 4b. Universal Archive Extractor & Game Auto-Detector (.ZIP, .RAR, .7Z, .ISO) ---
+cat > /usr/local/bin/heaven-archive-engine << 'ARCHIVEEOF'
+#!/bin/bash
+TARGET="$1"
+if [ -z "$TARGET" ]; then
+    TARGET=$(zenity --file-selection --title="HeavenOS Archive Engine - Select Archive (.zip .rar .7z .iso)" --file-filter="Archive Files (*.zip *.rar *.7z *.iso *.tar.gz) | *.zip *.rar *.7z *.iso *.tar.gz *.tar *.gz *.xz" 2>/dev/null)
+    if [ -z "$TARGET" ]; then exit 0; fi
 fi
 
-# Discord
-if [ -f /usr/share/discord/discord.png ]; then
-    cp -f /usr/share/discord/discord.png /usr/share/pixmaps/discord.png 2>/dev/null || true
-    cp -f /usr/share/discord/discord.png /usr/share/icons/hicolor/48x48/apps/discord.png 2>/dev/null || true
-elif [ -f /usr/share/icons/hicolor/256x256/apps/discord.png ]; then
-    cp -f /usr/share/icons/hicolor/256x256/apps/discord.png /usr/share/pixmaps/discord.png 2>/dev/null || true
+FILENAME=$(basename "$TARGET")
+BASENAME="${FILENAME%.*}"
+BASENAME="${BASENAME%.tar}"
+
+OUT_DIR="/config/Desktop/Extracted_${BASENAME}"
+mkdir -p "$OUT_DIR"
+
+zenity --info --title="HeavenOS Archive Engine" \
+       --text="<b>Auto-Extracting Archive:</b>\n$FILENAME\n\nDestination:\n$OUT_DIR\n\nPlease wait while HeavenOS unpacks your files..." \
+       --width=500 --timeout=3 2>/dev/null &
+
+if [[ "$TARGET" == *.rar || "$TARGET" == *.RAR ]]; then
+    unrar x -o+ "$TARGET" "$OUT_DIR/" 2>/dev/null || 7z x -y "$TARGET" -o"$OUT_DIR" 2>/dev/null
+else
+    7z x -y "$TARGET" -o"$OUT_DIR" 2>/dev/null || unzip -o "$TARGET" -d "$OUT_DIR" 2>/dev/null || tar -xf "$TARGET" -C "$OUT_DIR" 2>/dev/null
 fi
 
-# VS Code
-if [ -f /usr/share/code/resources/app/resources/linux/code.png ]; then
-    cp -f /usr/share/code/resources/app/resources/linux/code.png /usr/share/pixmaps/vscode.png 2>/dev/null || true
-    cp -f /usr/share/code/resources/app/resources/linux/code.png /usr/share/pixmaps/code.png 2>/dev/null || true
-    cp -f /usr/share/code/resources/app/resources/linux/code.png /usr/share/icons/hicolor/48x48/apps/vscode.png 2>/dev/null || true
+zenity --notification --text="✅ Archive Extracted: $FILENAME -> Desktop/Extracted_${BASENAME}" 2>/dev/null || true
+
+thunar "$OUT_DIR" 2>/dev/null &
+
+EXE_FILE=$(find "$OUT_DIR" -maxdepth 3 -iname "*.exe" ! -iname "unins*.exe" ! -iname "dxsetup.exe" 2>/dev/null | head -n 1)
+if [ -n "$EXE_FILE" ]; then
+    EXE_NAME=$(basename "$EXE_FILE")
+    if zenity --question --title="HeavenOS Auto-Detect Game / App" \
+              --text="<b>Game / Program Executable Detected!</b>\n\nFound executable: <b>$EXE_NAME</b>\n\nDo you want to launch this program with HeavenOS Windows Engine (Wine) now?" \
+              --width=480 2>/dev/null; then
+        heaven-exe-runner "$EXE_FILE" &
+    fi
+fi
+ARCHIVEEOF
+chmod +x /usr/local/bin/heaven-archive-engine
+# ---- 5. macOS Spotlight Search Engine (Ctrl + Space) ---------------
+cat > /usr/local/bin/heaven-spotlight << 'SPOTLIGHTEOF'
+#!/bin/bash
+QUERY=$(zenity --entry --title=" HeavenOS Spotlight Search" --text="Type App Name, File Name, or Math Calculation:" --width=450 2>/dev/null)
+if [ -z "$QUERY" ]; then exit 0; fi
+
+if [[ "$QUERY" =~ ^[0-9\ \+\-\*\/\.\(\)]+$ ]]; then
+    RESULT=$(python3 -c "print($QUERY)" 2>/dev/null)
+    if [ -n "$RESULT" ]; then
+        zenity --info --title="Spotlight Calculator" --text="<b>Result:</b> $QUERY = <b>$RESULT</b>" --width=350 2>/dev/null
+        exit 0
+    fi
 fi
 
-# GIMP
-for gimp_icon in /usr/share/icons/hicolor/scalable/apps/gimp.svg /usr/share/icons/hicolor/48x48/apps/gimp.png; do
-    if [ -f "$gimp_icon" ]; then
-        cp -f "$gimp_icon" /usr/share/pixmaps/gimp."${gimp_icon##*.}" 2>/dev/null || true
+MATCH=$(find /config/Desktop /usr/share/applications /usr/local/bin -iname "*$QUERY*" 2>/dev/null | head -n 1)
+if [ -n "$MATCH" ]; then
+    if [[ "$MATCH" == *.desktop ]]; then
+        gtk-launch $(basename "$MATCH" .desktop) 2>/dev/null || xdg-open "$MATCH" 2>/dev/null &
+    elif [ -x "$MATCH" ]; then
+        "$MATCH" &
+    else
+        thunar "$MATCH" &
+    fi
+else
+    zenity --error --title="Spotlight Search" --text="No matching application or file found for: <b>$QUERY</b>" --width=400 2>/dev/null
+fi
+SPOTLIGHTEOF
+chmod +x /usr/local/bin/heaven-spotlight
+
+# ---- 6. macOS Quick Look Preview Engine (Spacebar) ----------------
+cat > /usr/local/bin/heaven-quicklook << 'QUICKLOOKEOF'
+#!/bin/bash
+TARGET="$1"
+if [ -z "$TARGET" ]; then
+    TARGET=$(zenity --file-selection --title=" HeavenOS Quick Look - Select File to Preview" 2>/dev/null)
+    if [ -z "$TARGET" ]; then exit 0; fi
+fi
+
+FILENAME=$(basename "$TARGET")
+FILETYPE=$(file -b --mime-type "$TARGET" 2>/dev/null)
+FILESIZE=$(du -h "$TARGET" 2>/dev/null | cut -f1)
+
+if [[ "$FILETYPE" == text/* || "$TARGET" == *.txt || "$TARGET" == *.sh || "$TARGET" == *.py || "$TARGET" == *.json || "$TARGET" == *.md ]]; then
+    zenity --text-info --title=" Quick Look - $FILENAME ($FILESIZE)" --filename="$TARGET" --width=600 --height=450 2>/dev/null
+else
+    zenity --info --title=" Quick Look - $FILENAME" \
+           --text="<b>File Name:</b> $FILENAME\n<b>MIME Type:</b> $FILETYPE\n<b>File Size:</b> $FILESIZE\n\nLocation: $TARGET" \
+           --width=450 2>/dev/null
+fi
+QUICKLOOKEOF
+chmod +x /usr/local/bin/heaven-quicklook
+
+# ---- 7. Dynamic Dark / Light Mode Switcher -----------------------
+cat > /usr/local/bin/heaven-theme-toggle << 'THEMEEOF'
+#!/bin/bash
+CURRENT_THEME=$(xfconf-query -c xsettings -p /Net/ThemeName 2>/dev/null)
+
+if [[ "$CURRENT_THEME" == *"Dark"* || "$CURRENT_THEME" == *"dark"* ]]; then
+    NEW_THEME="WhiteSur-Light"
+    MODE_NAME="Light Mode ☀️"
+else
+    NEW_THEME="WhiteSur-Dark"
+    MODE_NAME="Dark Mode 🌙"
+fi
+
+xfconf-query -c xsettings -p /Net/ThemeName -s "$NEW_THEME" 2>/dev/null || true
+xfconf-query -c xfwm4 -p /general/theme -s "$NEW_THEME" 2>/dev/null || true
+zenity --notification --text=" HeavenOS switched to macOS Sonoma $MODE_NAME" 2>/dev/null || true
+THEMEEOF
+chmod +x /usr/local/bin/heaven-theme-toggle
+
+# ---- 8. 144 FPS Performance Turbo & RAM Disk Engine --------------
+cat > /usr/local/bin/heaven-fps-turbo << 'FPSEOF'
+#!/bin/bash
+mkdir -p /tmp/ramdisk
+mount -t tmpfs -o size=1G tmpfs /tmp/ramdisk 2>/dev/null || true
+
+CHOICE=$(zenity --list --title="⚡ HeavenOS FPS & Performance Turbo Engine" \
+  --column="Mode" --column="FPS" --column="Description" \
+  "Standard" "60 FPS" "Balanced 60 FPS Smooth Mode" \
+  "Ultra Performance" "120 FPS" "High Refresh Rate 120 FPS Mode" \
+  "Extreme Turbo" "144 FPS" "Maximum 144 FPS Ultra-Low Latency Mode" 2>/dev/null)
+
+if [ -z "$CHOICE" ]; then exit 0; fi
+
+FPS=60
+if [ "$CHOICE" = "Ultra Performance" ]; then FPS=120; fi
+if [ "$CHOICE" = "Extreme Turbo" ]; then FPS=144; fi
+
+for conf in /etc/kasmvnc/kasmvnc.yaml /config/.vnc/kasmvnc.yaml /config/.kasmdock/kasmvnc.yaml; do
+    if [ -f "$conf" ]; then
+        sed -i "s/max_frame_rate: [0-9]*/max_frame_rate: $FPS/g" "$conf" 2>/dev/null || true
+        sed -i "s/frame_rate: [0-9]*/frame_rate: $FPS/g" "$conf" 2>/dev/null || true
     fi
 done
 
-# Audacity
-for audacity_icon in /usr/share/icons/hicolor/scalable/apps/audacity.svg /usr/share/icons/hicolor/48x48/apps/audacity.png /usr/share/icons/hicolor/scalable/apps/org.audacityteam.Audacity.svg; do
-    if [ -f "$audacity_icon" ]; then
-        cp -f "$audacity_icon" /usr/share/pixmaps/audacity."${audacity_icon##*.}" 2>/dev/null || true
+zenity --info --title="⚡ HeavenOS Turbo Boost" \
+       --text="<b>HeavenOS High Performance Mode Activated!</b>\n\n• Target Refresh Rate: <b>$FPS FPS</b>\n• Dynamic RAM Disk: <b>/tmp/ramdisk (1 GB Active)</b>" \
+       --width=450 2>/dev/null
+FPSEOF
+chmod +x /usr/local/bin/heaven-fps-turbo
+
+# ---- 9. HeavenOS Time Machine Snapshot & Restore Engine ------------
+cat > /usr/local/bin/heaven-time-machine << 'TMEOF'
+#!/bin/bash
+SNAPSHOT_DIR="/config/.snapshots"
+mkdir -p "$SNAPSHOT_DIR"
+
+ACTION=$(zenity --list --title="⏱️ HeavenOS Time Machine Backup & Restore" \
+  --column="Action" --column="Description" \
+  "Take Snapshot" "Create instant snapshot backup of Desktop & Settings" \
+  "Restore Snapshot" "Restore Desktop & Settings from a previous snapshot" 2>/dev/null)
+
+if [ "$ACTION" = "Take Snapshot" ]; then
+    TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+    FILE="$SNAPSHOT_DIR/heaven_snapshot_$TIMESTAMP.tar.gz"
+    tar -czf "$FILE" -C /config Desktop .config 2>/dev/null
+    zenity --info --title="⏱️ Time Machine Snapshot Complete" \
+           --text="<b>Snapshot Backup Created Successfully!</b>\n\nFile: $FILE" --width=450 2>/dev/null
+elif [ "$ACTION" = "Restore Snapshot" ]; then
+    FILES=$(find "$SNAPSHOT_DIR" -name "*.tar.gz" 2>/dev/null)
+    if [ -z "$FILES" ]; then
+        zenity --error --title="Time Machine Restore" --text="No snapshots found in $SNAPSHOT_DIR" --width=400 2>/dev/null
+        exit 0
     fi
-done
-
-# VLC
-if [ -f /usr/share/icons/hicolor/48x48/apps/vlc.png ]; then
-    cp -f /usr/share/icons/hicolor/48x48/apps/vlc.png /usr/share/pixmaps/vlc.png 2>/dev/null || true
-fi
-
-# FileZilla
-if [ -f /usr/share/icons/hicolor/48x48/apps/filezilla.png ]; then
-    cp -f /usr/share/icons/hicolor/48x48/apps/filezilla.png /usr/share/pixmaps/filezilla.png 2>/dev/null || true
-fi
-
-# Wine
-for wine_icon in /usr/share/icons/hicolor/48x48/apps/wine.png /usr/share/icons/hicolor/48x48/apps/wine-installer.png; do
-    if [ -f "$wine_icon" ]; then
-        cp -f "$wine_icon" /usr/share/pixmaps/wine.png 2>/dev/null || true
+    SELECTED=$(zenity --file-selection --filename="$SNAPSHOT_DIR/" --title="Select Snapshot to Restore" 2>/dev/null)
+    if [ -n "$SELECTED" ]; then
+        tar -xzf "$SELECTED" -C /config/ 2>/dev/null
+        zenity --info --title="⏱️ Time Machine Restore Complete" \
+               --text="<b>Settings & Desktop Restored!</b>\n\nRestarting desktop..." --width=400 2>/dev/null
+        bash /usr/local/bin/apply-lotus-wallpaper.sh 2>/dev/null &
     fi
-done
-if [ ! -f /usr/share/pixmaps/wine.png ] && [ ! -f /usr/share/icons/WhiteSur/apps/wine.svg ] && [ ! -f /usr/share/icons/WhiteSur/apps/wine.png ]; then
-    cp -f /usr/share/icons/hicolor/48x48/apps/system-run.png /usr/share/pixmaps/wine.png 2>/dev/null || \
-    cp -f /usr/share/icons/Adwaita/48x48/categories/applications-other.png /usr/share/pixmaps/wine.png 2>/dev/null || true
+fi
+TMEOF
+chmod +x /usr/local/bin/heaven-time-machine
+
+# ---- 10. Smart Screenshot Tool Engine ----------------------------
+cat > /usr/local/bin/heaven-screenshot << 'SHOTEOF'
+#!/bin/bash
+TIMESTAMP=$(date +%Y-%m-%d_%H-%M-%S)
+OUTFILE="/config/Desktop/Screenshot_$TIMESTAMP.png"
+
+canberra-gtk-play -i camera-shutter 2>/dev/null || paplay /usr/share/sounds/ubuntu/stereo/camera-shutter.ogg 2>/dev/null || true
+
+if command -v xfce4-screenshooter &>/dev/null; then
+    xfce4-screenshooter -r -s "$OUTFILE" 2>/dev/null || xfce4-screenshooter -f -s "$OUTFILE" 2>/dev/null
+else
+    import -window root "$OUTFILE" 2>/dev/null
 fi
 
-# Ensure WhiteSur icon theme directory structure and index.theme exist
-mkdir -p /usr/share/icons/WhiteSur
-cat > /usr/share/icons/WhiteSur/index.theme << 'INDEXTHEME'
-[Icon Theme]
-Name=WhiteSur
-Comment=WhiteSur macOS Icon Theme
-Inherits=hicolor,Adwaita,gnome,Humanity,ubuntu-mono-dark
-Directories=apps,categories,devices,mimetypes,places,status,actions,scalable/apps,48x48/apps,256x256/apps
-
-[apps]
-Size=48
-Scale=1
-MinSize=16
-MaxSize=512
-Context=Applications
-Type=Scalable
-
-[scalable/apps]
-Size=48
-Scale=1
-MinSize=16
-MaxSize=512
-Context=Applications
-Type=Scalable
-
-[48x48/apps]
-Size=48
-Context=Applications
-Type=Fixed
-
-[256x256/apps]
-Size=256
-Context=Applications
-Type=Fixed
-
-[categories]
-Size=48
-Scale=1
-MinSize=16
-MaxSize=512
-Context=Categories
-Type=Scalable
-
-[devices]
-Size=48
-Scale=1
-MinSize=16
-MaxSize=512
-Context=Devices
-Type=Scalable
-
-[mimetypes]
-Size=48
-Scale=1
-MinSize=16
-MaxSize=512
-Context=MimeTypes
-Type=Scalable
-
-[places]
-Size=48
-Scale=1
-MinSize=16
-MaxSize=512
-Context=Places
-Type=Scalable
-
-[status]
-Size=48
-Scale=1
-MinSize=16
-MaxSize=512
-Context=Status
-Type=Scalable
-
-[actions]
-Size=48
-Scale=1
-MinSize=16
-MaxSize=512
-Context=Actions
-Type=Scalable
-INDEXTHEME
-
-# Create directory symlinks inside WhiteSur icon theme if structure is flat
-mkdir -p /usr/share/icons/WhiteSur/scalable /usr/share/icons/WhiteSur/48x48 /usr/share/icons/WhiteSur/256x256
-if [ -d /usr/share/icons/WhiteSur/apps ] && [ ! -d /usr/share/icons/WhiteSur/scalable/apps ]; then
-    ln -s /usr/share/icons/WhiteSur/apps /usr/share/icons/WhiteSur/scalable/apps 2>/dev/null || true
-    ln -s /usr/share/icons/WhiteSur/apps /usr/share/icons/WhiteSur/48x48/apps 2>/dev/null || true
-    ln -s /usr/share/icons/WhiteSur/apps /usr/share/icons/WhiteSur/256x256/apps 2>/dev/null || true
+if [ -f "$OUTFILE" ]; then
+    chmod +x "$OUTFILE" 2>/dev/null || true
+    zenity --notification --text="📸 Screenshot saved to Desktop: Screenshot_$TIMESTAMP.png" 2>/dev/null || true
 fi
-
-# Populate WhiteSur/apps with pixmaps to guarantee instant matching
-mkdir -p /usr/share/icons/WhiteSur/apps
-for img in /usr/share/pixmaps/*.png /usr/share/pixmaps/*.svg; do
-    if [ -f "$img" ]; then
-        cp -f "$img" /usr/share/icons/WhiteSur/apps/ 2>/dev/null || true
-    fi
-done
-
-# Re-index icon caches
-gtk-update-icon-cache -f -t /usr/share/icons/WhiteSur 2>/dev/null || true
-gtk-update-icon-cache -f -t /usr/share/icons/hicolor 2>/dev/null || true
+SHOTEOF
+chmod +x /usr/local/bin/heaven-screenshot
 
 # ====================================================================
-#  DESKTOP SHORTCUTS (Full HeavenOS App Suite)
+#  HEAVENOS EMBEDDED VECTOR ICON ENGINE (100% Guaranteed Offline Icons)
 # ====================================================================
+echo "[HeavenOS] Generating embedded vector application icons..."
+mkdir -p /usr/share/pixmaps /usr/share/icons/hicolor/48x48/apps /usr/share/icons/WhiteSur/apps
 
-cat > "$DESKTOP_DIR/Upload Files.desktop" << 'EOF'
-[Desktop Entry]
-Version=1.0
-Type=Application
-Name=Upload Files
-Comment=Drag & Drop File Upload Portal
-Exec=google-chrome-stable --no-sandbox http://localhost:8889
-Icon=folder-download
-Terminal=false
-Categories=Utility;FileTransfer;
-StartupNotify=true
-EOF
-chmod +x "$DESKTOP_DIR/Upload Files.desktop"
+# 1. Google Chrome Vector Logo
+cat > /usr/share/pixmaps/heaven_chrome.svg << 'SVGEOF'
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <circle cx="64" cy="64" r="60" fill="#ffffff" />
+  <path d="M 64 8 A 56 56 0 0 1 112.5 36 L 64 64 Z" fill="#EA4335" />
+  <path d="M 112.5 36 A 56 56 0 0 1 64 120 L 64 64 Z" fill="#34A853" />
+  <path d="M 64 120 A 56 56 0 0 1 15.5 36 L 64 64 Z" fill="#FBBC05" />
+  <path d="M 15.5 36 A 56 56 0 0 1 64 8 L 64 64 Z" fill="#EA4335" />
+  <circle cx="64" cy="64" r="28" fill="#ffffff" />
+  <circle cx="64" cy="64" r="22" fill="#1A73E8" />
+</svg>
+SVGEOF
 
-# --------------------------------------------------------------------
-#  GUARANTEED ABSOLUTE PATH ICON RESOLVER FOR DESKTOP SHORTCUTS
-# --------------------------------------------------------------------
+# 2. Discord Vector Logo
+cat > /usr/share/pixmaps/heaven_discord.svg << 'SVGEOF'
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <rect x="8" y="8" width="112" height="112" rx="28" fill="#5865F2"/>
+  <path d="M88 38A52 52 0 0 0 74 33.5a1.5 1.5 0 0 0-1.5.7 36 36 0 0 0-1.6 3.3 48 48 0 0 0-13.8 0 36 36 0 0 0-1.6-3.3 1.5 1.5 0 0 0-1.5-.7A52 52 0 0 0 40 38a1.5 1.5 0 0 0-.7.6C30 52.8 27.4 67.2 28.7 81.3a1.5 1.5 0 0 0 .6 1 52.2 52.2 0 0 0 15.8 8 1.5 1.5 0 0 0 1.6-.5 37.3 37.3 0 0 0 3.3-5.3 1.5 1.5 0 0 0-.8-2 34.2 34.2 0 0 1-4.9-2.3 1.5 1.5 0 0 1-.1-2.5c.3-.2.7-.5 1-.7A37.2 37.2 0 0 0 77.4 79c.3.2.7.5 1 .7a1.5 1.5 0 0 1-.1 2.5 34.2 34.2 0 0 1-4.9 2.3 1.5 1.5 0 0 0-.8 2c1 1.9 2.1 3.7 3.3 5.3a1.5 1.5 0 0 0 1.6.5 52.2 52.2 0 0 0 15.8-8 1.5 1.5 0 0 0 .6-1c1.6-16.3-2.6-30.6-11.2-43.3a1.5 1.5 0 0 0-.7-.6zM50.6 70.3c-3.5 0-6.4-3.2-6.4-7.2s2.8-7.2 6.4-7.2c3.6 0 6.5 3.3 6.4 7.2 0 4-2.8 7.2-6.4 7.2zm26.8 0c-3.5 0-6.4-3.2-6.4-7.2s2.8-7.2 6.4-7.2c3.6 0 6.5 3.3 6.4 7.2 0 4-2.8 7.2-6.4 7.2z" fill="#ffffff"/>
+</svg>
+SVGEOF
 
-# Chrome Icon Resolver
-CHROME_ICON="web-browser"
-if [ -f /opt/google/chrome/product_logo_48.png ]; then
-    cp -f /opt/google/chrome/product_logo_48.png /usr/share/pixmaps/google-chrome.png 2>/dev/null || true
-fi
-if [ -f /usr/share/pixmaps/google-chrome.png ]; then
-    CHROME_ICON="/usr/share/pixmaps/google-chrome.png"
-fi
+# 3. VS Code Vector Logo
+cat > /usr/share/pixmaps/heaven_vscode.svg << 'SVGEOF'
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <rect x="8" y="8" width="112" height="112" rx="24" fill="#007ACC"/>
+  <path d="M96 24L70 48L46 32L24 44V84L46 96L70 80L96 104V24Z" fill="#ffffff" opacity="0.9"/>
+  <path d="M96 24L70 54L96 84V24Z" fill="#005A9E"/>
+  <path d="M24 44L46 64L24 84V44Z" fill="#007ACC"/>
+</svg>
+SVGEOF
 
-# Discord Icon Resolver
-DISCORD_ICON="applications-internet"
-if [ -f /usr/share/discord/discord.png ]; then
-    cp -f /usr/share/discord/discord.png /usr/share/pixmaps/discord.png 2>/dev/null || true
-elif [ -f /usr/share/icons/hicolor/256x256/apps/discord.png ]; then
-    cp -f /usr/share/icons/hicolor/256x256/apps/discord.png /usr/share/pixmaps/discord.png 2>/dev/null || true
-fi
-if [ -f /usr/share/pixmaps/discord.png ]; then
-    DISCORD_ICON="/usr/share/pixmaps/discord.png"
-fi
+# 4. GIMP Vector Logo
+cat > /usr/share/pixmaps/heaven_gimp.svg << 'SVGEOF'
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <circle cx="64" cy="64" r="56" fill="#5C6B73"/>
+  <path d="M40 40C40 40 70 30 84 44C98 58 90 84 70 88C50 92 36 76 36 60Z" fill="#2B2D42"/>
+  <circle cx="52" cy="52" r="8" fill="#ffffff"/>
+  <circle cx="54" cy="52" r="4" fill="#000000"/>
+  <circle cx="76" cy="52" r="8" fill="#ffffff"/>
+  <circle cx="78" cy="52" r="4" fill="#000000"/>
+  <path d="M30 76C40 76 56 86 64 86" stroke="#E63946" stroke-width="8" stroke-linecap="round"/>
+</svg>
+SVGEOF
 
-# VS Code Icon Resolver
-VSCODE_ICON="applications-development"
-if [ -f /usr/share/code/resources/app/resources/linux/code.png ]; then
-    cp -f /usr/share/code/resources/app/resources/linux/code.png /usr/share/pixmaps/vscode.png 2>/dev/null || true
-fi
-if [ -f /usr/share/pixmaps/vscode.png ]; then
-    VSCODE_ICON="/usr/share/pixmaps/vscode.png"
-fi
+# 5. Audacity Vector Logo
+cat > /usr/share/pixmaps/heaven_audacity.svg << 'SVGEOF'
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <circle cx="64" cy="64" r="56" fill="#002060"/>
+  <path d="M32 64 C32 36 96 36 96 64" fill="none" stroke="#FFC000" stroke-width="12" stroke-linecap="round"/>
+  <path d="M40 64 L48 48 L56 80 L64 36 L72 88 L80 56 L88 64" fill="none" stroke="#00B0F0" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/>
+</svg>
+SVGEOF
 
-# GIMP Icon Resolver
-GIMP_ICON="applications-graphics"
-if [ -f /usr/share/icons/hicolor/48x48/apps/gimp.png ]; then
-    cp -f /usr/share/icons/hicolor/48x48/apps/gimp.png /usr/share/pixmaps/gimp.png 2>/dev/null || true
-fi
-if [ -f /usr/share/pixmaps/gimp.png ]; then
-    GIMP_ICON="/usr/share/pixmaps/gimp.png"
-fi
+# 6. VLC Vector Logo
+cat > /usr/share/pixmaps/heaven_vlc.svg << 'SVGEOF'
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <circle cx="64" cy="64" r="56" fill="#202020"/>
+  <polygon points="64,16 40,88 88,88" fill="#FF8800"/>
+  <polygon points="64,16 48,64 80,64" fill="#FFAA00"/>
+  <rect x="36" y="88" width="56" height="14" rx="4" fill="#FF8800"/>
+  <rect x="44" y="52" width="40" height="8" rx="2" fill="#FFFFFF"/>
+  <rect x="40" y="72" width="48" height="8" rx="2" fill="#FFFFFF"/>
+</svg>
+SVGEOF
 
-# Audacity Icon Resolver
-AUDACITY_ICON="audio-x-generic"
-if [ -f /usr/share/icons/hicolor/48x48/apps/audacity.png ]; then
-    cp -f /usr/share/icons/hicolor/48x48/apps/audacity.png /usr/share/pixmaps/audacity.png 2>/dev/null || true
-fi
-if [ -f /usr/share/pixmaps/audacity.png ]; then
-    AUDACITY_ICON="/usr/share/pixmaps/audacity.png"
-fi
+# 7. FileZilla Vector Logo
+cat > /usr/share/pixmaps/heaven_filezilla.svg << 'SVGEOF'
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <rect x="8" y="8" width="112" height="112" rx="24" fill="#B22222"/>
+  <path d="M36 40 H92 V52 H54 V64 H84 V76 H54 V96 H36 Z" fill="#FFFFFF"/>
+  <circle cx="84" cy="46" r="6" fill="#FFD700"/>
+</svg>
+SVGEOF
 
-# VLC Icon Resolver
-VLC_ICON="multimedia-player"
-if [ -f /usr/share/icons/hicolor/48x48/apps/vlc.png ]; then
-    cp -f /usr/share/icons/hicolor/48x48/apps/vlc.png /usr/share/pixmaps/vlc.png 2>/dev/null || true
-fi
-if [ -f /usr/share/pixmaps/vlc.png ]; then
-    VLC_ICON="/usr/share/pixmaps/vlc.png"
-fi
+# 8. Windows Apps Vector Logo
+cat > /usr/share/pixmaps/heaven_wine.svg << 'SVGEOF'
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <rect x="8" y="8" width="112" height="112" rx="24" fill="#0078D7"/>
+  <rect x="24" y="24" width="36" height="36" fill="#F25022"/>
+  <rect x="68" y="24" width="36" height="36" fill="#7FBA00"/>
+  <rect x="24" y="68" width="36" height="36" fill="#00A4EF"/>
+  <rect x="68" y="68" width="36" height="36" fill="#FFB900"/>
+</svg>
+SVGEOF
 
-# FileZilla Icon Resolver
-FILEZILLA_ICON="network-server"
-if [ -f /usr/share/icons/hicolor/48x48/apps/filezilla.png ]; then
-    cp -f /usr/share/icons/filezilla.png /usr/share/pixmaps/filezilla.png 2>/dev/null || true
-fi
-if [ -f /usr/share/pixmaps/filezilla.png ]; then
-    FILEZILLA_ICON="/usr/share/pixmaps/filezilla.png"
-fi
+# 9. Blender Vector Logo
+cat > /usr/share/pixmaps/heaven_blender.svg << 'SVGEOF'
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <circle cx="64" cy="64" r="56" fill="#EA7600"/>
+  <circle cx="64" cy="64" r="36" fill="#ffffff"/>
+  <circle cx="64" cy="64" r="24" fill="#22578A"/>
+  <polygon points="64,8 78,40 50,40" fill="#EA7600"/>
+</svg>
+SVGEOF
 
-# Wine Icon Resolver
-WINE_ICON="preferences-desktop-emulation"
-if [ -f /usr/share/icons/hicolor/48x48/apps/wine.png ]; then
-    cp -f /usr/share/icons/hicolor/48x48/apps/wine.png /usr/share/pixmaps/wine.png 2>/dev/null || true
-fi
-if [ ! -f /usr/share/pixmaps/wine.png ]; then
-    cp -f /usr/share/icons/hicolor/48x48/apps/system-run.png /usr/share/pixmaps/wine.png 2>/dev/null || true
-fi
-if [ -f /usr/share/pixmaps/wine.png ]; then
-    WINE_ICON="/usr/share/pixmaps/wine.png"
-fi
+# 10. Krita Vector Logo
+cat > /usr/share/pixmaps/heaven_krita.svg << 'SVGEOF'
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <circle cx="64" cy="64" r="56" fill="#1C2128"/>
+  <path d="M 64 8 A 56 56 0 0 1 112.5 36 L 64 64 Z" fill="#00C7FF" />
+  <path d="M 112.5 36 A 56 56 0 0 1 64 120 L 64 64 Z" fill="#E6007E" />
+  <path d="M 64 120 A 56 56 0 0 1 15.5 36 L 64 64 Z" fill="#FFCC00" />
+  <circle cx="64" cy="64" r="32" fill="#ffffff"/>
+  <path d="M50 46 C60 36 80 50 68 70 C60 80 44 74 44 60 Z" fill="#333333"/>
+</svg>
+SVGEOF
+
+# 11. Kdenlive Vector Logo
+cat > /usr/share/pixmaps/heaven_kdenlive.svg << 'SVGEOF'
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <rect x="8" y="8" width="112" height="112" rx="24" fill="#1E293B"/>
+  <rect x="20" y="24" width="88" height="80" rx="12" fill="#0284C7"/>
+  <polygon points="52,44 84,64 52,84" fill="#FFFFFF"/>
+  <rect x="20" y="24" width="88" height="12" fill="#0F172A" opacity="0.6"/>
+  <rect x="20" y="92" width="88" height="12" fill="#0F172A" opacity="0.6"/>
+</svg>
+SVGEOF
+
+# 12. Spotlight Search Vector Logo
+cat > /usr/share/pixmaps/heaven_spotlight.svg << 'SVGEOF'
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <rect x="8" y="8" width="112" height="112" rx="28" fill="#0284C7"/>
+  <circle cx="56" cy="56" r="28" fill="none" stroke="#ffffff" stroke-width="10"/>
+  <line x1="76" y1="76" x2="100" y2="100" stroke="#ffffff" stroke-width="12" stroke-linecap="round"/>
+</svg>
+SVGEOF
+
+# 13. Quick Look Vector Logo
+cat > /usr/share/pixmaps/heaven_quicklook.svg << 'SVGEOF'
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <rect x="8" y="8" width="112" height="112" rx="28" fill="#8B5CF6"/>
+  <path d="M 24 64 C 40 36 88 36 104 64 C 88 92 40 92 24 64 Z" fill="none" stroke="#ffffff" stroke-width="8"/>
+  <circle cx="64" cy="64" r="16" fill="#ffffff"/>
+</svg>
+SVGEOF
+
+# 14. Theme Switcher Vector Logo
+cat > /usr/share/pixmaps/heaven_theme.svg << 'SVGEOF'
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <rect x="8" y="8" width="112" height="112" rx="28" fill="#0F172A"/>
+  <path d="M 64 8 A 56 56 0 0 1 64 120 Z" fill="#F8FAFC"/>
+</svg>
+SVGEOF
+
+# 15. 144 FPS Turbo Vector Logo
+cat > /usr/share/pixmaps/heaven_fps.svg << 'SVGEOF'
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <rect x="8" y="8" width="112" height="112" rx="28" fill="#EC4899"/>
+  <path d="M 32 96 A 48 48 0 1 1 96 96" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round"/>
+  <line x1="64" y1="64" x2="88" y2="40" stroke="#FFD700" stroke-width="8" stroke-linecap="round"/>
+</svg>
+SVGEOF
+
+# 16. Time Machine Vector Logo
+cat > /usr/share/pixmaps/heaven_timemachine.svg << 'SVGEOF'
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <rect x="8" y="8" width="112" height="112" rx="28" fill="#10B981"/>
+  <circle cx="64" cy="64" r="36" fill="none" stroke="#ffffff" stroke-width="8"/>
+  <polyline points="64,40 64,64 80,64" fill="none" stroke="#ffffff" stroke-width="8" stroke-linecap="round"/>
+</svg>
+SVGEOF
+
+# 17. Screenshot Tool Vector Logo
+cat > /usr/share/pixmaps/heaven_screenshot.svg << 'SVGEOF'
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <rect x="8" y="8" width="112" height="112" rx="28" fill="#F59E0B"/>
+  <rect x="28" y="44" width="72" height="52" rx="10" fill="#ffffff"/>
+  <circle cx="64" cy="70" r="16" fill="#F59E0B"/>
+  <polygon points="44,44 54,32 74,32 84,44" fill="#ffffff"/>
+</svg>
+SVGEOF
+
+# 18. Archive Extractor Vector Logo
+cat > /usr/share/pixmaps/heaven_archive.svg << 'SVGEOF'
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <rect x="8" y="8" width="112" height="112" rx="28" fill="#D97706"/>
+  <rect x="24" y="24" width="80" height="40" rx="8" fill="#FBBF24"/>
+  <rect x="56" y="32" width="16" height="24" rx="4" fill="#78350F"/>
+  <rect x="60" y="44" width="8" height="8" rx="2" fill="#FBBF24"/>
+  <path d="M 32 72 L 96 72 M 32 84 L 96 84 M 32 96 L 96 96" stroke="#ffffff" stroke-width="6" stroke-linecap="round"/>
+</svg>
+SVGEOF
+
+# Resolve Icon Paths (Prefer official PNG if installed, otherwise use embedded vector SVG)
+CHROME_ICON="/usr/share/pixmaps/heaven_chrome.svg"
+[ -f /opt/google/chrome/product_logo_48.png ] && CHROME_ICON="/opt/google/chrome/product_logo_48.png"
+
+DISCORD_ICON="/usr/share/pixmaps/heaven_discord.svg"
+[ -f /usr/share/discord/discord.png ] && DISCORD_ICON="/usr/share/discord/discord.png"
+
+VSCODE_ICON="/usr/share/pixmaps/heaven_vscode.svg"
+[ -f /usr/share/code/resources/app/resources/linux/code.png ] && VSCODE_ICON="/usr/share/code/resources/app/resources/linux/code.png"
+
+GIMP_ICON="/usr/share/pixmaps/heaven_gimp.svg"
+[ -f /usr/share/icons/hicolor/48x48/apps/gimp.png ] && GIMP_ICON="/usr/share/icons/hicolor/48x48/apps/gimp.png"
+
+AUDACITY_ICON="/usr/share/pixmaps/heaven_audacity.svg"
+[ -f /usr/share/icons/hicolor/48x48/apps/audacity.png ] && AUDACITY_ICON="/usr/share/icons/hicolor/48x48/apps/audacity.png"
+
+VLC_ICON="/usr/share/pixmaps/heaven_vlc.svg"
+[ -f /usr/share/icons/hicolor/48x48/apps/vlc.png ] && VLC_ICON="/usr/share/icons/hicolor/48x48/apps/vlc.png"
+
+FILEZILLA_ICON="/usr/share/pixmaps/heaven_filezilla.svg"
+[ -f /usr/share/icons/hicolor/48x48/apps/filezilla.png ] && FILEZILLA_ICON="/usr/share/icons/hicolor/48x48/apps/filezilla.png"
+
+WINE_ICON="/usr/share/pixmaps/heaven_wine.svg"
+[ -f /usr/share/icons/hicolor/48x48/apps/wine.png ] && WINE_ICON="/usr/share/icons/hicolor/48x48/apps/wine.png"
+
+BLENDER_ICON="/usr/share/pixmaps/heaven_blender.svg"
+[ -f /usr/share/icons/hicolor/48x48/apps/blender.png ] && BLENDER_ICON="/usr/share/icons/hicolor/48x48/apps/blender.png"
+
+KRITA_ICON="/usr/share/pixmaps/heaven_krita.svg"
+[ -f /usr/share/icons/hicolor/48x48/apps/krita.png ] && KRITA_ICON="/usr/share/icons/hicolor/48x48/apps/krita.png"
+
+KDENLIVE_ICON="/usr/share/pixmaps/heaven_kdenlive.svg"
+[ -f /usr/share/icons/hicolor/48x48/apps/kdenlive.png ] && KDENLIVE_ICON="/usr/share/icons/hicolor/48x48/apps/kdenlive.png"
+
+KDENLIVE_ICON="/usr/share/pixmaps/heaven_kdenlive.svg"
+[ -f /usr/share/icons/hicolor/48x48/apps/kdenlive.png ] && KDENLIVE_ICON="/usr/share/icons/hicolor/48x48/apps/kdenlive.png"
 
 cat > "$DESKTOP_DIR/Upload Files.desktop" << 'EOF'
 [Desktop Entry]
@@ -1170,6 +1324,133 @@ StartupNotify=true
 EOF
 chmod +x "$DESKTOP_DIR/FileZilla.desktop"
 
+cat > "$DESKTOP_DIR/Blender.desktop" << EOF
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Blender 3D
+Comment=3D Modeling & Creation Suite
+Exec=blender
+Icon=$BLENDER_ICON
+Terminal=false
+Categories=Graphics;3DGraphics;
+StartupNotify=true
+EOF
+chmod +x "$DESKTOP_DIR/Blender.desktop"
+
+cat > "$DESKTOP_DIR/Krita.desktop" << EOF
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Krita Painting
+Comment=Digital Painting & Raster Graphics
+Exec=krita
+Icon=$KRITA_ICON
+Terminal=false
+Categories=Graphics;RasterGraphics;
+StartupNotify=true
+EOF
+chmod +x "$DESKTOP_DIR/Krita.desktop"
+
+cat > "$DESKTOP_DIR/Kdenlive.desktop" << EOF
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Kdenlive Video Editor
+Comment=Non-Linear Video Editor
+Exec=kdenlive
+Icon=$KDENLIVE_ICON
+Terminal=false
+Categories=AudioVideo;Video;
+StartupNotify=true
+EOF
+chmod +x "$DESKTOP_DIR/Kdenlive.desktop"
+
+# Feature Desktop Shortcuts
+cat > "$DESKTOP_DIR/Spotlight Search.desktop" << 'EOF'
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Spotlight Search
+Comment=Search Apps, Files & Calculator (Ctrl + Space)
+Exec=heaven-spotlight
+Icon=/usr/share/pixmaps/heaven_spotlight.svg
+Terminal=false
+Categories=Utility;
+StartupNotify=true
+EOF
+chmod +x "$DESKTOP_DIR/Spotlight Search.desktop"
+
+cat > "$DESKTOP_DIR/Quick Look.desktop" << 'EOF'
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Quick Look Preview
+Comment=Instant File & Media Preview (Spacebar)
+Exec=heaven-quicklook
+Icon=/usr/share/pixmaps/heaven_quicklook.svg
+Terminal=false
+Categories=Utility;
+StartupNotify=true
+EOF
+chmod +x "$DESKTOP_DIR/Quick Look.desktop"
+
+cat > "$DESKTOP_DIR/Dark-Light Mode.desktop" << 'EOF'
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Dark / Light Mode
+Comment=Toggle macOS Sonoma UI Theme
+Exec=heaven-theme-toggle
+Icon=/usr/share/pixmaps/heaven_theme.svg
+Terminal=false
+Categories=Utility;
+StartupNotify=true
+EOF
+chmod +x "$DESKTOP_DIR/Dark-Light Mode.desktop"
+
+cat > "$DESKTOP_DIR/144 FPS Turbo Boost.desktop" << 'EOF'
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=144 FPS Turbo Boost
+Comment=High Refresh Rate & Dynamic RAM Disk Engine
+Exec=heaven-fps-turbo
+Icon=/usr/share/pixmaps/heaven_fps.svg
+Terminal=false
+Categories=Utility;System;
+StartupNotify=true
+EOF
+chmod +x "$DESKTOP_DIR/144 FPS Turbo Boost.desktop"
+
+cat > "$DESKTOP_DIR/HeavenOS Time Machine.desktop" << 'EOF'
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=HeavenOS Time Machine
+Comment=Instant System & Settings Backup/Restore
+Exec=heaven-time-machine
+Icon=/usr/share/pixmaps/heaven_timemachine.svg
+Terminal=false
+Categories=Utility;System;
+StartupNotify=true
+EOF
+chmod +x "$DESKTOP_DIR/HeavenOS Time Machine.desktop"
+
+cat > "$DESKTOP_DIR/Screenshot Tool.desktop" << 'EOF'
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Screenshot Tool
+Comment=Capture Screen Region (Ctrl + Shift + 4)
+Exec=heaven-screenshot
+Icon=/usr/share/pixmaps/heaven_screenshot.svg
+Terminal=false
+Categories=Utility;
+StartupNotify=true
+EOF
+chmod +x "$DESKTOP_DIR/Screenshot Tool.desktop"
+
 cat > "$DESKTOP_DIR/Files.desktop" << 'EOF'
 [Desktop Entry]
 Version=1.0
@@ -1213,6 +1494,21 @@ EOF
 chmod +x "$DESKTOP_DIR/Touch Keyboard.desktop"
 
 # Multi-OS Desktop Shortcuts
+cat > "$DESKTOP_DIR/Archive Extractor (.ZIP .RAR .7Z).desktop" << 'EOF'
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Archive Extractor (.ZIP .RAR .7Z)
+Comment=Auto-Extract & Game Detector (.zip / .rar / .7z / .iso)
+Exec=heaven-archive-engine %f
+Icon=/usr/share/pixmaps/heaven_archive.svg
+Terminal=false
+Categories=Utility;Archiving;
+StartupNotify=true
+MimeType=application/zip;application/x-rar;application/x-rar-compressed;application/x-7z-compressed;application/x-compressed-tar;application/x-tar;application/x-gzip;application/x-iso9660-image;
+EOF
+chmod +x "$DESKTOP_DIR/Archive Extractor (.ZIP .RAR .7Z).desktop"
+
 cat > "$DESKTOP_DIR/Windows Apps (.EXE).desktop" << EOF
 [Desktop Entry]
 Version=1.0
@@ -1296,6 +1592,21 @@ EOF
 cat > "$PLANK_DIR/GIMP.dockitem" << 'EOF'
 [PlankDockItemPreferences]
 Launcher=file:///config/Desktop/GIMP.desktop
+EOF
+
+cat > "$PLANK_DIR/Blender.dockitem" << 'EOF'
+[PlankDockItemPreferences]
+Launcher=file:///config/Desktop/Blender.desktop
+EOF
+
+cat > "$PLANK_DIR/Krita.dockitem" << 'EOF'
+[PlankDockItemPreferences]
+Launcher=file:///config/Desktop/Krita.desktop
+EOF
+
+cat > "$PLANK_DIR/Kdenlive.dockitem" << 'EOF'
+[PlankDockItemPreferences]
+Launcher=file:///config/Desktop/Kdenlive.desktop
 EOF
 
 cat > "$PLANK_DIR/Files.dockitem" << 'EOF'
@@ -1517,6 +1828,15 @@ MimeType=application/vnd.android.package-archive;
 NoDisplay=true
 EOF
 
+cat > /usr/share/applications/heaven-archive.desktop << 'EOF'
+[Desktop Entry]
+Type=Application
+Name=HeavenOS Archive Engine
+Exec=heaven-archive-engine %f
+MimeType=application/zip;application/x-rar;application/x-rar-compressed;application/x-7z-compressed;application/x-compressed-tar;application/x-tar;application/x-gzip;application/x-iso9660-image;
+NoDisplay=true
+EOF
+
 cat > /config/.config/mimeapps.list << 'EOF'
 [Default Applications]
 application/x-ms-dos-executable=heaven-exe.desktop
@@ -1528,6 +1848,14 @@ application/x-iso9660-appimage=heaven-linux.desktop
 application/x-appimage=heaven-linux.desktop
 application/vnd.debian.binary-package=heaven-linux.desktop
 application/vnd.android.package-archive=heaven-apk.desktop
+application/zip=heaven-archive.desktop
+application/x-rar=heaven-archive.desktop
+application/x-rar-compressed=heaven-archive.desktop
+application/x-7z-compressed=heaven-archive.desktop
+application/x-compressed-tar=heaven-archive.desktop
+application/x-tar=heaven-archive.desktop
+application/x-gzip=heaven-archive.desktop
+application/x-iso9660-image=heaven-archive.desktop
 EOF
 
 # ---- Ownership fix -----------------------------------------------
@@ -1545,5 +1873,12 @@ chown abc:abc /usr/local/bin/heaven-exe-runner 2>/dev/null || true
 chown abc:abc /usr/local/bin/heaven-mac-runner 2>/dev/null || true
 chown abc:abc /usr/local/bin/heaven-linux-runner 2>/dev/null || true
 chown abc:abc /usr/local/bin/heaven-apk-runner 2>/dev/null || true
+chown abc:abc /usr/local/bin/heaven-archive-engine 2>/dev/null || true
+chown abc:abc /usr/local/bin/heaven-spotlight 2>/dev/null || true
+chown abc:abc /usr/local/bin/heaven-quicklook 2>/dev/null || true
+chown abc:abc /usr/local/bin/heaven-theme-toggle 2>/dev/null || true
+chown abc:abc /usr/local/bin/heaven-fps-turbo 2>/dev/null || true
+chown abc:abc /usr/local/bin/heaven-time-machine 2>/dev/null || true
+chown abc:abc /usr/local/bin/heaven-screenshot 2>/dev/null || true
 
 echo "[HeavenOS] macOS Sonoma UI + Multi-OS Program Support (.EXE, .DMG, .AppImage) Active!"

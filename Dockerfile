@@ -44,7 +44,7 @@ RUN apt-get update && \
         zenity thunar xfce4-terminal \
         onboard xinput xdotool libinput-tools \
         fonts-liberation libu2f-udev libvulkan1 xdg-utils libnspr4 libnss3 \
-        gimp audacity vlc filezilla code \
+        gimp audacity vlc filezilla code blender krita kdenlive \
         wine wine64 winetricks cabextract \
         p7zip-full p7zip-rar dmg2img hfsutils hfsprogs gdebi-core unzip && \
     mkdir -p /tmp/downloads /usr/share/themes /usr/share/icons && \
