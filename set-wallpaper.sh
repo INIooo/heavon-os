@@ -788,43 +788,89 @@ thunar "$OUT_DIR" 2>/dev/null &
 APKRUNNER
 chmod +x /usr/local/bin/heaven-apk-runner
 
-# ---- 4b. Universal Archive Extractor & Game Auto-Detector (.ZIP, .RAR, .7Z, .ISO) ---
+# ---- 4b. Universal WinRAR/7-Zip Archive Extractor & Game Auto-Detector ---
 cat > /usr/local/bin/heaven-archive-engine << 'ARCHIVEEOF'
 #!/bin/bash
 TARGET="$1"
 if [ -z "$TARGET" ]; then
-    TARGET=$(zenity --file-selection --title="HeavenOS Archive Engine - Select Archive (.zip .rar .7z .iso)" --file-filter="Archive Files (*.zip *.rar *.7z *.iso *.tar.gz) | *.zip *.rar *.7z *.iso *.tar.gz *.tar *.gz *.xz" 2>/dev/null)
+    TARGET=$(zenity --file-selection --title="HeavenOS WinRAR Engine - Select Archive (.zip .rar .7z .iso)" --file-filter="Archive Files (*.zip *.rar *.7z *.iso *.tar.gz) | *.zip *.rar *.7z *.iso *.tar.gz *.tar *.gz *.xz" 2>/dev/null)
     if [ -z "$TARGET" ]; then exit 0; fi
 fi
 
-FILENAME=$(basename "$TARGET")
-BASENAME="${FILENAME%.*}"
-BASENAME="${BASENAME%.tar}"
+# Install unar/unrar at runtime if missing
+if ! command -v unar &>/dev/null && ! command -v unrar &>/dev/null; then
+    apt-get update &>/dev/null && apt-get install -y --no-install-recommends unar unrar &>/dev/null || true
+fi
 
-OUT_DIR="/config/Desktop/Extracted_${BASENAME}"
+FILENAME=$(basename "$TARGET")
+RAW_NAME="${FILENAME%.*}"
+RAW_NAME="${RAW_NAME%.tar}"
+
+OUT_DIR="/config/Desktop/Extracted_${RAW_NAME}"
 mkdir -p "$OUT_DIR"
 
 zenity --info --title="HeavenOS Archive Engine" \
-       --text="<b>Auto-Extracting Archive:</b>\n$FILENAME\n\nDestination:\n$OUT_DIR\n\nPlease wait while HeavenOS unpacks your files..." \
-       --width=500 --timeout=3 2>/dev/null &
+       --text="<b>Unpacking Archive (WinRAR / 7-Zip Engine):</b>\n$FILENAME\n\nDestination:\n$OUT_DIR\n\nPlease wait while HeavenOS unpacks all files..." \
+       --width=520 --timeout=3 2>/dev/null &
 
-if [[ "$TARGET" == *.rar || "$TARGET" == *.RAR ]]; then
-    unrar x -o+ "$TARGET" "$OUT_DIR/" 2>/dev/null || 7z x -y "$TARGET" -o"$OUT_DIR" 2>/dev/null
-else
-    7z x -y "$TARGET" -o"$OUT_DIR" 2>/dev/null || unzip -o "$TARGET" -d "$OUT_DIR" 2>/dev/null || tar -xf "$TARGET" -C "$OUT_DIR" 2>/dev/null
+EXTRACT_OK=0
+
+# Engine 1: unar (Universal Unarchiver for RARv5 / WinRAR 5 & 6)
+if command -v unar &>/dev/null; then
+    unar -o "$OUT_DIR" -f -q "$TARGET" 2>/dev/null && EXTRACT_OK=1
 fi
 
-zenity --notification --text="✅ Archive Extracted: $FILENAME -> Desktop/Extracted_${BASENAME}" 2>/dev/null || true
+# Engine 2: unrar
+if [ $EXTRACT_OK -eq 0 ] && command -v unrar &>/dev/null; then
+    unrar x -o+ -y "$TARGET" "$OUT_DIR/" 2>/dev/null && EXTRACT_OK=1
+fi
 
-thunar "$OUT_DIR" 2>/dev/null &
+# Engine 3: 7z
+if [ $EXTRACT_OK -eq 0 ]; then
+    7z x -y "$TARGET" -o"$OUT_DIR" 2>/dev/null && EXTRACT_OK=1
+fi
 
-EXE_FILE=$(find "$OUT_DIR" -maxdepth 3 -iname "*.exe" ! -iname "unins*.exe" ! -iname "dxsetup.exe" 2>/dev/null | head -n 1)
-if [ -n "$EXE_FILE" ]; then
-    EXE_NAME=$(basename "$EXE_FILE")
-    if zenity --question --title="HeavenOS Auto-Detect Game / App" \
-              --text="<b>Game / Program Executable Detected!</b>\n\nFound executable: <b>$EXE_NAME</b>\n\nDo you want to launch this program with HeavenOS Windows Engine (Wine) now?" \
-              --width=480 2>/dev/null; then
-        heaven-exe-runner "$EXE_FILE" &
+# Engine 4: unzip / tar
+if [ $EXTRACT_OK -eq 0 ]; then
+    unzip -o "$TARGET" -d "$OUT_DIR" 2>/dev/null || tar -xf "$TARGET" -C "$OUT_DIR" 2>/dev/null && EXTRACT_OK=1
+fi
+
+# Subfolder Auto-Navigation (Detect if archive contained a single root directory)
+INNER_DIRS=$(find "$OUT_DIR" -mindepth 1 -maxdepth 1 2>/dev/null)
+INNER_COUNT=$(echo "$INNER_DIRS" | grep -v '^$' | wc -l)
+if [ "$INNER_COUNT" -eq 1 ] && [ -d "$INNER_DIRS" ]; then
+    TARGET_VIEW_DIR="$INNER_DIRS"
+else
+    TARGET_VIEW_DIR="$OUT_DIR"
+fi
+
+FILE_COUNT=$(find "$TARGET_VIEW_DIR" -type f 2>/dev/null | wc -l)
+
+if [ "$FILE_COUNT" -gt 0 ]; then
+    zenity --notification --text="✅ WinRAR Unpacked: $FILENAME ($FILE_COUNT files extracted)" 2>/dev/null || true
+    thunar "$TARGET_VIEW_DIR" 2>/dev/null &
+
+    # Game Executable Auto-Detection (.exe)
+    EXE_FILE=$(find "$TARGET_VIEW_DIR" -maxdepth 3 -iname "*.exe" ! -iname "unins*.exe" ! -iname "dxsetup.exe" ! -iname "vcredist*.exe" 2>/dev/null | head -n 1)
+    if [ -n "$EXE_FILE" ]; then
+        EXE_NAME=$(basename "$EXE_FILE")
+        if zenity --question --title="🎮 HeavenOS Game Auto-Launcher" \
+                  --text="<b>Game / Program Executable Detected!</b>\n\nFound executable: <b>$EXE_NAME</b>\n\nDo you want to launch this game with HeavenOS Windows Engine (Wine) now?" \
+                  --width=500 2>/dev/null; then
+            heaven-exe-runner "$EXE_FILE" &
+        fi
+    fi
+else
+    # Fallback to GUI Archive Manager if 0 files extracted
+    zenity --warning --title="HeavenOS Archive Engine" \
+           --text="<b>Auto-extraction produced 0 files.</b>\nOpening GUI Archive Manager (WinRAR Alternative)..." \
+           --width=450 2>/dev/null
+    if command -v file-roller &>/dev/null; then
+        file-roller "$TARGET" &
+    elif command -v peazip &>/dev/null; then
+        peazip "$TARGET" &
+    else
+        thunar "$OUT_DIR" &
     fi
 fi
 ARCHIVEEOF
