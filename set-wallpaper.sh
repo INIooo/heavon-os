@@ -977,98 +977,147 @@ StartupNotify=true
 EOF
 chmod +x "$DESKTOP_DIR/Upload Files.desktop"
 
-cat > "$DESKTOP_DIR/Chrome.desktop" << 'EOF'
+# Resolve guaranteed icon paths/names for desktop shortcuts
+CHROME_ICON="web-browser"
+[ -f /opt/google/chrome/product_logo_48.png ] && CHROME_ICON="/opt/google/chrome/product_logo_48.png"
+[ -f /usr/share/pixmaps/google-chrome.png ] && CHROME_ICON="google-chrome"
+
+DISCORD_ICON="applications-internet"
+[ -f /usr/share/discord/discord.png ] && DISCORD_ICON="/usr/share/discord/discord.png"
+[ -f /usr/share/pixmaps/discord.png ] && DISCORD_ICON="discord"
+
+VSCODE_ICON="applications-development"
+[ -f /usr/share/code/resources/app/resources/linux/code.png ] && VSCODE_ICON="/usr/share/code/resources/app/resources/linux/code.png"
+[ -f /usr/share/pixmaps/vscode.png ] && VSCODE_ICON="vscode"
+
+GIMP_ICON="applications-graphics"
+[ -f /usr/share/icons/hicolor/48x48/apps/gimp.png ] && GIMP_ICON="gimp"
+[ -f /usr/share/pixmaps/gimp.png ] && GIMP_ICON="gimp"
+[ -f /usr/share/pixmaps/gimp.svg ] && GIMP_ICON="gimp"
+
+AUDACITY_ICON="audio-x-generic"
+[ -f /usr/share/icons/hicolor/48x48/apps/audacity.png ] && AUDACITY_ICON="audacity"
+[ -f /usr/share/pixmaps/audacity.png ] && AUDACITY_ICON="audacity"
+[ -f /usr/share/pixmaps/audacity.svg ] && AUDACITY_ICON="audacity"
+
+VLC_ICON="multimedia-player"
+[ -f /usr/share/icons/hicolor/48x48/apps/vlc.png ] && VLC_ICON="vlc"
+[ -f /usr/share/pixmaps/vlc.png ] && VLC_ICON="vlc"
+
+FILEZILLA_ICON="network-server"
+[ -f /usr/share/icons/hicolor/48x48/apps/filezilla.png ] && FILEZILLA_ICON="filezilla"
+[ -f /usr/share/pixmaps/filezilla.png ] && FILEZILLA_ICON="filezilla"
+
+WINE_ICON="preferences-desktop-emulation"
+[ -f /usr/share/icons/hicolor/48x48/apps/wine.png ] && WINE_ICON="wine"
+[ -f /usr/share/pixmaps/wine.png ] && WINE_ICON="wine"
+
+cat > "$DESKTOP_DIR/Upload Files.desktop" << 'EOF'
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Upload Files
+Comment=Drag & Drop File Upload Portal
+Exec=google-chrome-stable --no-sandbox http://localhost:8889
+Icon=folder-download
+Terminal=false
+Categories=Utility;FileTransfer;
+StartupNotify=true
+EOF
+chmod +x "$DESKTOP_DIR/Upload Files.desktop"
+
+cat > "$DESKTOP_DIR/Chrome.desktop" << EOF
 [Desktop Entry]
 Version=1.0
 Type=Application
 Name=Google Chrome
 Comment=Web Browser
 Exec=google-chrome-stable --no-sandbox %U
-Icon=google-chrome
+Icon=$CHROME_ICON
 Terminal=false
 Categories=Network;WebBrowser;
 StartupNotify=true
 EOF
 chmod +x "$DESKTOP_DIR/Chrome.desktop"
 
-cat > "$DESKTOP_DIR/Discord.desktop" << 'EOF'
+cat > "$DESKTOP_DIR/Discord.desktop" << EOF
 [Desktop Entry]
 Version=1.0
 Type=Application
 Name=Discord
 Comment=Chat & Voice
 Exec=discord --no-sandbox
-Icon=discord
+Icon=$DISCORD_ICON
 Terminal=false
 Categories=Network;InstantMessaging;
 StartupNotify=true
 EOF
 chmod +x "$DESKTOP_DIR/Discord.desktop"
 
-cat > "$DESKTOP_DIR/VSCode.desktop" << 'EOF'
+cat > "$DESKTOP_DIR/VSCode.desktop" << EOF
 [Desktop Entry]
 Version=1.0
 Type=Application
 Name=VS Code
 Comment=Visual Studio Code
 Exec=code --no-sandbox
-Icon=vscode
+Icon=$VSCODE_ICON
 Terminal=false
 Categories=Development;IDE;
 StartupNotify=true
 EOF
 chmod +x "$DESKTOP_DIR/VSCode.desktop"
 
-cat > "$DESKTOP_DIR/GIMP.desktop" << 'EOF'
+cat > "$DESKTOP_DIR/GIMP.desktop" << EOF
 [Desktop Entry]
 Version=1.0
 Type=Application
 Name=GIMP
 Comment=Image Editor
 Exec=gimp
-Icon=gimp
+Icon=$GIMP_ICON
 Terminal=false
 Categories=Graphics;2DGraphics;
 StartupNotify=true
 EOF
 chmod +x "$DESKTOP_DIR/GIMP.desktop"
 
-cat > "$DESKTOP_DIR/Audacity.desktop" << 'EOF'
+cat > "$DESKTOP_DIR/Audacity.desktop" << EOF
 [Desktop Entry]
 Version=1.0
 Type=Application
 Name=Audacity
 Comment=Audio Editor
 Exec=audacity
-Icon=audacity
+Icon=$AUDACITY_ICON
 Terminal=false
 Categories=AudioVideo;Audio;
 StartupNotify=true
 EOF
 chmod +x "$DESKTOP_DIR/Audacity.desktop"
 
-cat > "$DESKTOP_DIR/VLC.desktop" << 'EOF'
+cat > "$DESKTOP_DIR/VLC.desktop" << EOF
 [Desktop Entry]
 Version=1.0
 Type=Application
 Name=VLC Player
 Comment=Media Player
 Exec=vlc
-Icon=vlc
+Icon=$VLC_ICON
 Terminal=false
 Categories=AudioVideo;Player;
 StartupNotify=true
 EOF
 chmod +x "$DESKTOP_DIR/VLC.desktop"
 
-cat > "$DESKTOP_DIR/FileZilla.desktop" << 'EOF'
+cat > "$DESKTOP_DIR/FileZilla.desktop" << EOF
 [Desktop Entry]
 Version=1.0
 Type=Application
 Name=FileZilla
 Comment=FTP Client
 Exec=filezilla
-Icon=filezilla
+Icon=$FILEZILLA_ICON
 Terminal=false
 Categories=Network;FileTransfer;
 StartupNotify=true
@@ -1118,14 +1167,14 @@ EOF
 chmod +x "$DESKTOP_DIR/Touch Keyboard.desktop"
 
 # Multi-OS Desktop Shortcuts
-cat > "$DESKTOP_DIR/Windows Apps (.EXE).desktop" << 'EOF'
+cat > "$DESKTOP_DIR/Windows Apps (.EXE).desktop" << EOF
 [Desktop Entry]
 Version=1.0
 Type=Application
 Name=Windows Apps (.EXE)
 Comment=Run Windows Executables (.EXE / .MSI)
 Exec=heaven-exe-runner
-Icon=wine
+Icon=$WINE_ICON
 Terminal=false
 Categories=Utility;Emulation;
 StartupNotify=true
