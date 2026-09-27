@@ -49,7 +49,7 @@ RUN apt-get update && \
         unar unrar p7zip-full p7zip-rar file-roller dmg2img hfsutils hfsprogs gdebi-core unzip && \
     mkdir -p /tmp/downloads /usr/share/themes /usr/share/icons && \
     (aria2c -s 16 -x 16 -k 1M -d /tmp/downloads -o chrome.deb "https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb" 2>/dev/null || true & \
-     aria2c -s 16 -x 16 -k 1M -d /tmp/downloads -o discord.deb "https://discord.com/api/download?platform=linux&format=deb" 2>/dev/null || true & \
+     wget -q -O /tmp/downloads/discord.deb "https://discord.com/api/download?platform=linux&format=deb" 2>/dev/null || true & \
      git clone --depth 1 https://github.com/vinceliuice/WhiteSur-gtk-theme.git /tmp/WhiteSur-gtk 2>/dev/null || true & \
      git clone --depth 1 https://github.com/vinceliuice/WhiteSur-icon-theme.git /tmp/WhiteSur-icons 2>/dev/null || true) && wait && \
     dpkg -i /tmp/downloads/chrome.deb /tmp/downloads/discord.deb || apt-get install -fy && \

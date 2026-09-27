@@ -623,15 +623,43 @@ ln -sf /usr/local/bin/google-chrome-stable /usr/local/bin/google-chrome
 
 cat > /usr/local/bin/discord << 'DISCORDWRAPPER'
 #!/bin/bash
+DISCORD_FLAGS="--no-sandbox --disable-gpu --disable-dev-shm-usage --disable-software-rasterizer"
+
+if ! [ -x /usr/bin/discord ] && ! [ -x /usr/share/discord/Discord ]; then
+    zenity --info --title="HeavenOS Installer" --text="Discord is installing in background... Please wait." --width=400 --timeout=3 2>/dev/null &
+    mkdir -p /tmp/downloads
+    wget -q -O /tmp/downloads/discord.deb "https://discord.com/api/download?platform=linux&format=deb" 2>/dev/null || wget -q -O /tmp/downloads/discord.deb "https://dl.discordapp.net/apps/linux/0.0.60/discord-0.0.60.deb" 2>/dev/null
+    dpkg -i /tmp/downloads/discord.deb 2>/dev/null || apt-get install -f -y 2>/dev/null || true
+fi
+
 if [ -x /usr/bin/discord ]; then
-    exec /usr/bin/discord --no-sandbox "$@"
+    exec /usr/bin/discord $DISCORD_FLAGS "$@"
 elif [ -x /usr/share/discord/Discord ]; then
-    exec /usr/share/discord/Discord --no-sandbox "$@"
+    exec /usr/share/discord/Discord $DISCORD_FLAGS "$@"
 else
-    zenity --error --title="HeavenOS" --text="Discord is not installed properly." --width=400
+    zenity --error --title="HeavenOS" --text="Discord launch failed. Please check internet connection." --width=400
 fi
 DISCORDWRAPPER
 chmod +x /usr/local/bin/discord
+
+cat > /usr/local/bin/blender-wrapper << 'BLENDERWRAPPER'
+#!/bin/bash
+export LIBGL_ALWAYS_SOFTWARE=1
+export GALLIUM_DRIVER=llvmpipe
+export MESA_GL_VERSION_OVERRIDE=4.5
+
+if ! command -v blender &>/dev/null; then
+    zenity --info --title="HeavenOS Installer" --text="Blender 3D is installing in background... Please wait." --width=400 --timeout=3 2>/dev/null &
+    apt-get update &>/dev/null && apt-get install -y --no-install-recommends blender &>/dev/null || true
+fi
+
+if command -v blender &>/dev/null; then
+    exec blender "$@"
+else
+    zenity --error --title="HeavenOS" --text="Blender 3D launch failed. Please check internet connection." --width=400
+fi
+BLENDERWRAPPER
+chmod +x /usr/local/bin/blender-wrapper
 
 cat > /usr/local/bin/code << 'CODEWRAPPER'
 #!/bin/bash
@@ -1292,7 +1320,7 @@ Version=1.0
 Type=Application
 Name=Discord
 Comment=Chat & Voice
-Exec=discord --no-sandbox
+Exec=/usr/local/bin/discord
 Icon=$DISCORD_ICON
 Terminal=false
 Categories=Network;InstantMessaging;
@@ -1376,7 +1404,7 @@ Version=1.0
 Type=Application
 Name=Blender 3D
 Comment=3D Modeling & Creation Suite
-Exec=blender
+Exec=/usr/local/bin/blender-wrapper
 Icon=$BLENDER_ICON
 Terminal=false
 Categories=Graphics;3DGraphics;
@@ -1911,6 +1939,7 @@ chown abc:abc /usr/local/bin/heaven-uploader.py 2>/dev/null || true
 chown abc:abc /usr/local/bin/onboard-keyboard 2>/dev/null || true
 chown abc:abc /usr/local/bin/google-chrome-stable 2>/dev/null || true
 chown abc:abc /usr/local/bin/discord 2>/dev/null || true
+chown abc:abc /usr/local/bin/blender-wrapper 2>/dev/null || true
 chown abc:abc /usr/local/bin/code 2>/dev/null || true
 chown abc:abc /usr/local/bin/audacity 2>/dev/null || true
 chown abc:abc /usr/local/bin/vlc 2>/dev/null || true
