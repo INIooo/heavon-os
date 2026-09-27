@@ -41,6 +41,12 @@ xfconf-query -c xfce4-desktop -lv 2>/dev/null | grep -E "last-image|image-path" 
         xfconf-query -c xfce4-desktop -p "$prop" -s "$WALLPAPER" 2>/dev/null
     done
 
+# ---- Ensure all desktop shortcuts are trusted & executable -------
+chmod +x /config/Desktop/*.desktop 2>/dev/null || true
+for dfile in /config/Desktop/*.desktop; do
+    [ -f "$dfile" ] && gio set "$dfile" "metadata::trusted" yes 2>/dev/null || true
+done
+
 # ---- Refresh xfdesktop --------------------------------------------
 killall xfdesktop 2>/dev/null
 sleep 1

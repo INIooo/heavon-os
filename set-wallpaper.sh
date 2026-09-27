@@ -977,40 +977,86 @@ StartupNotify=true
 EOF
 chmod +x "$DESKTOP_DIR/Upload Files.desktop"
 
-# Resolve guaranteed icon paths/names for desktop shortcuts
+# --------------------------------------------------------------------
+#  GUARANTEED ABSOLUTE PATH ICON RESOLVER FOR DESKTOP SHORTCUTS
+# --------------------------------------------------------------------
+
+# Chrome Icon Resolver
 CHROME_ICON="web-browser"
-[ -f /opt/google/chrome/product_logo_48.png ] && CHROME_ICON="/opt/google/chrome/product_logo_48.png"
-[ -f /usr/share/pixmaps/google-chrome.png ] && CHROME_ICON="google-chrome"
+if [ -f /opt/google/chrome/product_logo_48.png ]; then
+    cp -f /opt/google/chrome/product_logo_48.png /usr/share/pixmaps/google-chrome.png 2>/dev/null || true
+fi
+if [ -f /usr/share/pixmaps/google-chrome.png ]; then
+    CHROME_ICON="/usr/share/pixmaps/google-chrome.png"
+fi
 
+# Discord Icon Resolver
 DISCORD_ICON="applications-internet"
-[ -f /usr/share/discord/discord.png ] && DISCORD_ICON="/usr/share/discord/discord.png"
-[ -f /usr/share/pixmaps/discord.png ] && DISCORD_ICON="discord"
+if [ -f /usr/share/discord/discord.png ]; then
+    cp -f /usr/share/discord/discord.png /usr/share/pixmaps/discord.png 2>/dev/null || true
+elif [ -f /usr/share/icons/hicolor/256x256/apps/discord.png ]; then
+    cp -f /usr/share/icons/hicolor/256x256/apps/discord.png /usr/share/pixmaps/discord.png 2>/dev/null || true
+fi
+if [ -f /usr/share/pixmaps/discord.png ]; then
+    DISCORD_ICON="/usr/share/pixmaps/discord.png"
+fi
 
+# VS Code Icon Resolver
 VSCODE_ICON="applications-development"
-[ -f /usr/share/code/resources/app/resources/linux/code.png ] && VSCODE_ICON="/usr/share/code/resources/app/resources/linux/code.png"
-[ -f /usr/share/pixmaps/vscode.png ] && VSCODE_ICON="vscode"
+if [ -f /usr/share/code/resources/app/resources/linux/code.png ]; then
+    cp -f /usr/share/code/resources/app/resources/linux/code.png /usr/share/pixmaps/vscode.png 2>/dev/null || true
+fi
+if [ -f /usr/share/pixmaps/vscode.png ]; then
+    VSCODE_ICON="/usr/share/pixmaps/vscode.png"
+fi
 
+# GIMP Icon Resolver
 GIMP_ICON="applications-graphics"
-[ -f /usr/share/icons/hicolor/48x48/apps/gimp.png ] && GIMP_ICON="gimp"
-[ -f /usr/share/pixmaps/gimp.png ] && GIMP_ICON="gimp"
-[ -f /usr/share/pixmaps/gimp.svg ] && GIMP_ICON="gimp"
+if [ -f /usr/share/icons/hicolor/48x48/apps/gimp.png ]; then
+    cp -f /usr/share/icons/hicolor/48x48/apps/gimp.png /usr/share/pixmaps/gimp.png 2>/dev/null || true
+fi
+if [ -f /usr/share/pixmaps/gimp.png ]; then
+    GIMP_ICON="/usr/share/pixmaps/gimp.png"
+fi
 
+# Audacity Icon Resolver
 AUDACITY_ICON="audio-x-generic"
-[ -f /usr/share/icons/hicolor/48x48/apps/audacity.png ] && AUDACITY_ICON="audacity"
-[ -f /usr/share/pixmaps/audacity.png ] && AUDACITY_ICON="audacity"
-[ -f /usr/share/pixmaps/audacity.svg ] && AUDACITY_ICON="audacity"
+if [ -f /usr/share/icons/hicolor/48x48/apps/audacity.png ]; then
+    cp -f /usr/share/icons/hicolor/48x48/apps/audacity.png /usr/share/pixmaps/audacity.png 2>/dev/null || true
+fi
+if [ -f /usr/share/pixmaps/audacity.png ]; then
+    AUDACITY_ICON="/usr/share/pixmaps/audacity.png"
+fi
 
+# VLC Icon Resolver
 VLC_ICON="multimedia-player"
-[ -f /usr/share/icons/hicolor/48x48/apps/vlc.png ] && VLC_ICON="vlc"
-[ -f /usr/share/pixmaps/vlc.png ] && VLC_ICON="vlc"
+if [ -f /usr/share/icons/hicolor/48x48/apps/vlc.png ]; then
+    cp -f /usr/share/icons/hicolor/48x48/apps/vlc.png /usr/share/pixmaps/vlc.png 2>/dev/null || true
+fi
+if [ -f /usr/share/pixmaps/vlc.png ]; then
+    VLC_ICON="/usr/share/pixmaps/vlc.png"
+fi
 
+# FileZilla Icon Resolver
 FILEZILLA_ICON="network-server"
-[ -f /usr/share/icons/hicolor/48x48/apps/filezilla.png ] && FILEZILLA_ICON="filezilla"
-[ -f /usr/share/pixmaps/filezilla.png ] && FILEZILLA_ICON="filezilla"
+if [ -f /usr/share/icons/hicolor/48x48/apps/filezilla.png ]; then
+    cp -f /usr/share/icons/filezilla.png /usr/share/pixmaps/filezilla.png 2>/dev/null || true
+fi
+if [ -f /usr/share/pixmaps/filezilla.png ]; then
+    FILEZILLA_ICON="/usr/share/pixmaps/filezilla.png"
+fi
 
+# Wine Icon Resolver
 WINE_ICON="preferences-desktop-emulation"
-[ -f /usr/share/icons/hicolor/48x48/apps/wine.png ] && WINE_ICON="wine"
-[ -f /usr/share/pixmaps/wine.png ] && WINE_ICON="wine"
+if [ -f /usr/share/icons/hicolor/48x48/apps/wine.png ]; then
+    cp -f /usr/share/icons/hicolor/48x48/apps/wine.png /usr/share/pixmaps/wine.png 2>/dev/null || true
+fi
+if [ ! -f /usr/share/pixmaps/wine.png ]; then
+    cp -f /usr/share/icons/hicolor/48x48/apps/system-run.png /usr/share/pixmaps/wine.png 2>/dev/null || true
+fi
+if [ -f /usr/share/pixmaps/wine.png ]; then
+    WINE_ICON="/usr/share/pixmaps/wine.png"
+fi
 
 cat > "$DESKTOP_DIR/Upload Files.desktop" << 'EOF'
 [Desktop Entry]
