@@ -37,6 +37,7 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         gtk2-engines-murrine gtk2-engines-pixbuf plank \
         sound-theme-freedesktop ubuntu-sounds yaru-theme-sound \
+        hicolor-icon-theme adwaita-icon-theme human-icon-theme gtk-update-icon-cache \
         libcanberra-gtk-module libcanberra-gtk3-module \
         pulseaudio-utils alsa-utils sox vorbis-tools \
         python3 python3-pip python3-venv nodejs \
@@ -46,14 +47,16 @@ RUN apt-get update && \
         gimp audacity vlc filezilla code \
         wine wine64 winetricks cabextract \
         p7zip-full p7zip-rar dmg2img hfsutils hfsprogs gdebi-core unzip && \
-    mkdir -p /tmp/downloads /usr/share/themes/WhiteSur-Dark /usr/share/icons/WhiteSur && \
+    mkdir -p /tmp/downloads /usr/share/themes /usr/share/icons && \
     (aria2c -s 16 -x 16 -k 1M -d /tmp/downloads -o chrome.deb "https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb" 2>/dev/null || true & \
      aria2c -s 16 -x 16 -k 1M -d /tmp/downloads -o discord.deb "https://discord.com/api/download?platform=linux&format=deb" 2>/dev/null || true & \
      git clone --depth 1 https://github.com/vinceliuice/WhiteSur-gtk-theme.git /tmp/WhiteSur-gtk 2>/dev/null || true & \
      git clone --depth 1 https://github.com/vinceliuice/WhiteSur-icon-theme.git /tmp/WhiteSur-icons 2>/dev/null || true) && wait && \
     dpkg -i /tmp/downloads/chrome.deb /tmp/downloads/discord.deb || apt-get install -fy && \
-    cp -r /tmp/WhiteSur-gtk/src/* /usr/share/themes/WhiteSur-Dark/ 2>/dev/null || true && \
-    cp -r /tmp/WhiteSur-icons/src/* /usr/share/icons/WhiteSur/ 2>/dev/null || true && \
+    (/tmp/WhiteSur-gtk/install.sh -d /usr/share/themes -c dark 2>/dev/null || (mkdir -p /usr/share/themes/WhiteSur-Dark && cp -r /tmp/WhiteSur-gtk/src/* /usr/share/themes/WhiteSur-Dark/ 2>/dev/null) || true) && \
+    (/tmp/WhiteSur-icons/install.sh -d /usr/share/icons 2>/dev/null || (mkdir -p /usr/share/icons/WhiteSur && cp -r /tmp/WhiteSur-icons/src/* /usr/share/icons/WhiteSur/ 2>/dev/null) || true) && \
+    gtk-update-icon-cache -f /usr/share/icons/WhiteSur 2>/dev/null || true && \
+    gtk-update-icon-cache -f /usr/share/icons/hicolor 2>/dev/null || true && \
     rm -rf /tmp/downloads /tmp/WhiteSur-gtk /tmp/WhiteSur-icons /var/lib/apt/lists/* /var/tmp/* /tmp/* && \
     apt-get clean
 

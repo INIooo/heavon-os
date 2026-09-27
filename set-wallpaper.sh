@@ -789,6 +789,177 @@ APKRUNNER
 chmod +x /usr/local/bin/heaven-apk-runner
 
 # ====================================================================
+#  HEAVENOS ICON REPAIR & FREEDESKTOP SYSTEM INDEXING
+# ====================================================================
+echo "[HeavenOS] Fixing and indexing application desktop icons..."
+
+# Ensure system icon directories exist
+mkdir -p /usr/share/pixmaps /usr/share/icons/hicolor/48x48/apps /usr/share/icons/hicolor/scalable/apps /usr/share/icons/WhiteSur/apps
+
+# Copy/Symlink application icons into system pixmaps and hicolor directories
+# Google Chrome
+if [ -f /opt/google/chrome/product_logo_48.png ]; then
+    cp -f /opt/google/chrome/product_logo_48.png /usr/share/pixmaps/google-chrome.png 2>/dev/null || true
+    cp -f /opt/google/chrome/product_logo_48.png /usr/share/icons/hicolor/48x48/apps/google-chrome.png 2>/dev/null || true
+elif [ -f /usr/share/icons/hicolor/48x48/apps/google-chrome.png ]; then
+    cp -f /usr/share/icons/hicolor/48x48/apps/google-chrome.png /usr/share/pixmaps/google-chrome.png 2>/dev/null || true
+fi
+
+# Discord
+if [ -f /usr/share/discord/discord.png ]; then
+    cp -f /usr/share/discord/discord.png /usr/share/pixmaps/discord.png 2>/dev/null || true
+    cp -f /usr/share/discord/discord.png /usr/share/icons/hicolor/48x48/apps/discord.png 2>/dev/null || true
+elif [ -f /usr/share/icons/hicolor/256x256/apps/discord.png ]; then
+    cp -f /usr/share/icons/hicolor/256x256/apps/discord.png /usr/share/pixmaps/discord.png 2>/dev/null || true
+fi
+
+# VS Code
+if [ -f /usr/share/code/resources/app/resources/linux/code.png ]; then
+    cp -f /usr/share/code/resources/app/resources/linux/code.png /usr/share/pixmaps/vscode.png 2>/dev/null || true
+    cp -f /usr/share/code/resources/app/resources/linux/code.png /usr/share/pixmaps/code.png 2>/dev/null || true
+    cp -f /usr/share/code/resources/app/resources/linux/code.png /usr/share/icons/hicolor/48x48/apps/vscode.png 2>/dev/null || true
+fi
+
+# GIMP
+for gimp_icon in /usr/share/icons/hicolor/scalable/apps/gimp.svg /usr/share/icons/hicolor/48x48/apps/gimp.png; do
+    if [ -f "$gimp_icon" ]; then
+        cp -f "$gimp_icon" /usr/share/pixmaps/gimp."${gimp_icon##*.}" 2>/dev/null || true
+    fi
+done
+
+# Audacity
+for audacity_icon in /usr/share/icons/hicolor/scalable/apps/audacity.svg /usr/share/icons/hicolor/48x48/apps/audacity.png /usr/share/icons/hicolor/scalable/apps/org.audacityteam.Audacity.svg; do
+    if [ -f "$audacity_icon" ]; then
+        cp -f "$audacity_icon" /usr/share/pixmaps/audacity."${audacity_icon##*.}" 2>/dev/null || true
+    fi
+done
+
+# VLC
+if [ -f /usr/share/icons/hicolor/48x48/apps/vlc.png ]; then
+    cp -f /usr/share/icons/hicolor/48x48/apps/vlc.png /usr/share/pixmaps/vlc.png 2>/dev/null || true
+fi
+
+# FileZilla
+if [ -f /usr/share/icons/hicolor/48x48/apps/filezilla.png ]; then
+    cp -f /usr/share/icons/hicolor/48x48/apps/filezilla.png /usr/share/pixmaps/filezilla.png 2>/dev/null || true
+fi
+
+# Wine
+for wine_icon in /usr/share/icons/hicolor/48x48/apps/wine.png /usr/share/icons/hicolor/48x48/apps/wine-installer.png; do
+    if [ -f "$wine_icon" ]; then
+        cp -f "$wine_icon" /usr/share/pixmaps/wine.png 2>/dev/null || true
+    fi
+done
+if [ ! -f /usr/share/pixmaps/wine.png ] && [ ! -f /usr/share/icons/WhiteSur/apps/wine.svg ] && [ ! -f /usr/share/icons/WhiteSur/apps/wine.png ]; then
+    cp -f /usr/share/icons/hicolor/48x48/apps/system-run.png /usr/share/pixmaps/wine.png 2>/dev/null || \
+    cp -f /usr/share/icons/Adwaita/48x48/categories/applications-other.png /usr/share/pixmaps/wine.png 2>/dev/null || true
+fi
+
+# Ensure WhiteSur icon theme directory structure and index.theme exist
+mkdir -p /usr/share/icons/WhiteSur
+cat > /usr/share/icons/WhiteSur/index.theme << 'INDEXTHEME'
+[Icon Theme]
+Name=WhiteSur
+Comment=WhiteSur macOS Icon Theme
+Inherits=hicolor,Adwaita,gnome,Humanity,ubuntu-mono-dark
+Directories=apps,categories,devices,mimetypes,places,status,actions,scalable/apps,48x48/apps,256x256/apps
+
+[apps]
+Size=48
+Scale=1
+MinSize=16
+MaxSize=512
+Context=Applications
+Type=Scalable
+
+[scalable/apps]
+Size=48
+Scale=1
+MinSize=16
+MaxSize=512
+Context=Applications
+Type=Scalable
+
+[48x48/apps]
+Size=48
+Context=Applications
+Type=Fixed
+
+[256x256/apps]
+Size=256
+Context=Applications
+Type=Fixed
+
+[categories]
+Size=48
+Scale=1
+MinSize=16
+MaxSize=512
+Context=Categories
+Type=Scalable
+
+[devices]
+Size=48
+Scale=1
+MinSize=16
+MaxSize=512
+Context=Devices
+Type=Scalable
+
+[mimetypes]
+Size=48
+Scale=1
+MinSize=16
+MaxSize=512
+Context=MimeTypes
+Type=Scalable
+
+[places]
+Size=48
+Scale=1
+MinSize=16
+MaxSize=512
+Context=Places
+Type=Scalable
+
+[status]
+Size=48
+Scale=1
+MinSize=16
+MaxSize=512
+Context=Status
+Type=Scalable
+
+[actions]
+Size=48
+Scale=1
+MinSize=16
+MaxSize=512
+Context=Actions
+Type=Scalable
+INDEXTHEME
+
+# Create directory symlinks inside WhiteSur icon theme if structure is flat
+mkdir -p /usr/share/icons/WhiteSur/scalable /usr/share/icons/WhiteSur/48x48 /usr/share/icons/WhiteSur/256x256
+if [ -d /usr/share/icons/WhiteSur/apps ] && [ ! -d /usr/share/icons/WhiteSur/scalable/apps ]; then
+    ln -s /usr/share/icons/WhiteSur/apps /usr/share/icons/WhiteSur/scalable/apps 2>/dev/null || true
+    ln -s /usr/share/icons/WhiteSur/apps /usr/share/icons/WhiteSur/48x48/apps 2>/dev/null || true
+    ln -s /usr/share/icons/WhiteSur/apps /usr/share/icons/WhiteSur/256x256/apps 2>/dev/null || true
+fi
+
+# Populate WhiteSur/apps with pixmaps to guarantee instant matching
+mkdir -p /usr/share/icons/WhiteSur/apps
+for img in /usr/share/pixmaps/*.png /usr/share/pixmaps/*.svg; do
+    if [ -f "$img" ]; then
+        cp -f "$img" /usr/share/icons/WhiteSur/apps/ 2>/dev/null || true
+    fi
+done
+
+# Re-index icon caches
+gtk-update-icon-cache -f -t /usr/share/icons/WhiteSur 2>/dev/null || true
+gtk-update-icon-cache -f -t /usr/share/icons/hicolor 2>/dev/null || true
+
+# ====================================================================
 #  DESKTOP SHORTCUTS (Full HeavenOS App Suite)
 # ====================================================================
 
